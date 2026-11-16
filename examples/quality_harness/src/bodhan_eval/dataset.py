@@ -5,14 +5,13 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Tuple
 
 from bodhan_eval.types import DatasetItem, ItemReport, Label
 
 logger = logging.getLogger(__name__)
 
 
-def read_dataset(path: str | Path) -> Tuple[list[DatasetItem], int]:
+def read_dataset(path: str | Path) -> tuple[list[DatasetItem], int]:
     """
     Load a JSONL dataset.
     Logs and skips corrupted lines or items missing required fields ('id', 'source', 'lang').
@@ -25,7 +24,7 @@ def read_dataset(path: str | Path) -> Tuple[list[DatasetItem], int]:
     valid_items: list[DatasetItem] = []
     skipped_count = 0
 
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(file_path, encoding="utf-8") as f:
         for line_no, raw_line in enumerate(f, start=1):
             line = raw_line.strip()
             if not line:
@@ -78,7 +77,7 @@ def filter_by_langs(items: list[DatasetItem], target_langs: list[str]) -> list[D
     """Filter dataset items by target language codes."""
     if not target_langs:
         return items
-    allowed = {l.strip().lower() for l in target_langs}
+    allowed = {lang.strip().lower() for lang in target_langs}
     return [item for item in items if item.lang.strip().lower() in allowed]
 
 
@@ -87,6 +86,5 @@ def write_items_jsonl(reports: list[ItemReport], output_path: str | Path) -> Non
     path = Path(output_path).resolve()
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
-        for r in reports:
-            f.write(r.model_dump_json(exclude_none=True) + "\n")
+        f.writelines(r.model_dump_json(exclude_none=True) + "\n" for r in reports)
     logger.info(f"Wrote {len(reports)} item reports to {path}")

@@ -1,0 +1,122 @@
+{
+  "timestamp": "2026-11-16T12:45:16.543264+00:00",
+  "total_items": 120,
+  "clean_items": 92,
+  "flagged_items": 28,
+  "flag_rate": 0.2333,
+  "languages": {
+    "hi": {
+      "total": 40,
+      "flagged": 9,
+      "errors_by_category": {
+        "format": 3,
+        "number": 4,
+        "wrong_language": 2
+      }
+    },
+    "ta": {
+      "total": 40,
+      "flagged": 9,
+      "errors_by_category": {
+        "format": 3,
+        "number": 4,
+        "wrong_language": 2
+      }
+    },
+    "bn": {
+      "total": 40,
+      "flagged": 10,
+      "errors_by_category": {
+        "format": 3,
+        "number": 4,
+        "wrong_language": 2,
+        "entity": 1
+      }
+    }
+  },
+  "errors_by_category": {
+    "format": 9,
+    "number": 12,
+    "wrong_language": 6,
+    "entity": 1
+  },
+  "cost": {
+    "total_cost_inr": 0,
+    "max_budget_inr": 50.0,
+    "budget_remaining_inr": 50.0,
+    "breakdown_by_model_inr": {},
+    "call_count": 0
+  },
+  "calibration": {
+    "per_category": [
+      {
+        "category": "omission",
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 6,
+        "support": 6
+      },
+      {
+        "category": "addition",
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 6,
+        "support": 6
+      },
+      {
+        "category": "number",
+        "precision": 0.6667,
+        "recall": 1.0,
+        "f1": 0.8,
+        "true_positives": 6,
+        "false_positives": 3,
+        "false_negatives": 0,
+        "support": 6
+      },
+      {
+        "category": "format",
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "true_positives": 6,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "support": 6
+      },
+      {
+        "category": "wrong_language",
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "true_positives": 6,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "support": 6
+      }
+    ],
+    "overall_precision": 0.8571,
+    "overall_recall": 0.6,
+    "overall_f1": 0.7059,
+    "localization_accuracy": 1.0,
+    "category_accuracy": 1.0,
+    "clean_false_alarm_rate": 0.0,
+    "tuned_thresholds": {
+      "omission": 0.2,
+      "addition": 0.2,
+      "mistranslation": 0.4,
+      "number": 0.2,
+      "entity": 0.4,
+      "format": 0.2,
+      "wrong_language": 0.2,
+      "speech_omission": 0.4,
+      "speech_repetition": 0.4,
+      "speech_garbled": 0.4
+    }
+  }
+}

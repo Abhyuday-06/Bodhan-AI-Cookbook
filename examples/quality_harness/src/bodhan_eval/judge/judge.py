@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from bodhan_eval.api.llm import LLMJudgeClient
 from bodhan_eval.judge.rubric import JUDGE_SYSTEM_PROMPT, build_judge_prompt

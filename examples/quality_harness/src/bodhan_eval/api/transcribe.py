@@ -6,6 +6,7 @@ import io
 import logging
 import wave
 from pathlib import Path
+
 import httpx
 
 from bodhan_eval.cache import DiskCache
@@ -92,12 +93,11 @@ class TranscribeClient:
         if lang:
             data["language"] = lang
 
-        async with self.rate_limiter:
-            async with httpx.AsyncClient(timeout=90.0) as client:
-                resp = await client.post(endpoint, headers=headers, files=files, data=data)
-                if resp.status_code != 200:
-                    raise RuntimeError(f"Indic-Transcribe error ({resp.status_code}): {resp.text}")
-                result_json = resp.json()
+        async with self.rate_limiter, httpx.AsyncClient(timeout=90.0) as client:
+            resp = await client.post(endpoint, headers=headers, files=files, data=data)
+            if resp.status_code != 200:
+                raise RuntimeError(f"Indic-Transcribe error ({resp.status_code}): {resp.text}")
+            result_json = resp.json()
 
         transcribed_text = result_json.get("text", "")
 

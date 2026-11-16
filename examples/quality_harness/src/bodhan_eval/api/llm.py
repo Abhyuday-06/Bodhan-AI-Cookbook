@@ -6,6 +6,7 @@ import json
 import logging
 import re
 from typing import Any
+
 import httpx
 
 from bodhan_eval.cache import DiskCache
@@ -103,18 +104,17 @@ class LLMJudgeClient:
 
         endpoint = f"{self.base_url}/chat/completions"
 
-        async with self.rate_limiter:
-            async with httpx.AsyncClient(timeout=90.0) as client:
+        async with self.rate_limiter, httpx.AsyncClient(timeout=90.0) as client:
+            resp = await client.post(endpoint, headers=headers, json=body)
+            if resp.status_code == 400 and "response_format" in resp.text:
+                # Some OpenAI-compatible servers do not support response_format
+                body.pop("response_format", None)
                 resp = await client.post(endpoint, headers=headers, json=body)
-                if resp.status_code == 400 and "response_format" in resp.text:
-                    # Some OpenAI-compatible servers do not support response_format
-                    body.pop("response_format", None)
-                    resp = await client.post(endpoint, headers=headers, json=body)
 
-                if resp.status_code != 200:
-                    raise RuntimeError(f"LLM API error ({resp.status_code}): {resp.text}")
+            if resp.status_code != 200:
+                raise RuntimeError(f"LLM API error ({resp.status_code}): {resp.text}")
 
-                res_json = resp.json()
+            res_json = resp.json()
 
         choices = res_json.get("choices", [])
         if not choices:

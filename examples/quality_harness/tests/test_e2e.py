@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import tempfile
 from pathlib import Path
+
 import pytest
 
 from bodhan_eval.config import Config
@@ -47,8 +48,7 @@ async def test_end_to_end_harness_run():
         ]
 
         with open(dataset_path, "w", encoding="utf-8") as f:
-            for it in items:
-                f.write(json.dumps(it, ensure_ascii=False) + "\n")
+            f.writelines(json.dumps(it, ensure_ascii=False) + "\n" for it in items)
 
         with open(calibration_path, "w", encoding="utf-8") as f:
             for it in items:

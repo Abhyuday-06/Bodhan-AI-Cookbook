@@ -5,10 +5,10 @@ from __future__ import annotations
 import io
 import logging
 import math
-from pathlib import Path
 import struct
-from typing import Any
 import wave
+from pathlib import Path
+from typing import Any
 
 from bodhan_eval.checks.base import BaseCheck
 from bodhan_eval.types import CheckResult, DatasetItem, ErrorCategory, Severity

@@ -2,28 +2,28 @@
 
 from __future__ import annotations
 
+from bodhan_eval.checks.audio_analysis import AudioAnalysisCheck
+from bodhan_eval.checks.backtranslation import BackTranslationCheck
 from bodhan_eval.checks.base import BaseCheck
-from bodhan_eval.checks.numbers import NumberCheck
 from bodhan_eval.checks.entities import EntityCheck
 from bodhan_eval.checks.format_check import FormatCheck
-from bodhan_eval.checks.script import ScriptCheck
+from bodhan_eval.checks.numbers import NumberCheck
 from bodhan_eval.checks.reference import ReferenceCheck
-from bodhan_eval.checks.backtranslation import BackTranslationCheck
+from bodhan_eval.checks.script import ScriptCheck
 from bodhan_eval.checks.speech import SpeechCheck
-from bodhan_eval.checks.audio_analysis import AudioAnalysisCheck
 
 __all__ = [
+    "AudioAnalysisCheck",
+    "BackTranslationCheck",
     "BaseCheck",
-    "NumberCheck",
     "EntityCheck",
     "FormatCheck",
-    "ScriptCheck",
+    "NumberCheck",
     "ReferenceCheck",
-    "BackTranslationCheck",
+    "ScriptCheck",
     "SpeechCheck",
-    "AudioAnalysisCheck",
-    "get_deterministic_checks",
     "get_all_checks",
+    "get_deterministic_checks",
 ]
 
 

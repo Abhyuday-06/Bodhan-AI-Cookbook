@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from bodhan_eval.injector.injector import ErrorInjector
-from bodhan_eval.types import DatasetItem, ErrorCategory
+from bodhan_eval.types import ErrorCategory
 
 
 def test_injector_number_mutation():

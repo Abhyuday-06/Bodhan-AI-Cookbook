@@ -38,4 +38,8 @@ markers = [
 ]
 
 [tool.ruff]
-line-length = 120
+line-length = 160
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501", "B008", "B007", "F841"]

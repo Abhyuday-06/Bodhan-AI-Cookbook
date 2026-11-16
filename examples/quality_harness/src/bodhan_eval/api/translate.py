@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+
 import httpx
 
 from bodhan_eval.cache import DiskCache
@@ -67,25 +68,24 @@ class TranslateClient:
 
         endpoint = f"{self.base_url}/translate"
 
-        async with self.rate_limiter:
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                resp = await client.post(endpoint, headers=headers, json=body)
-                if resp.status_code == 404:
-                    # Fallback to OpenAI-compatible chat completion route if available
-                    chat_endpoint = f"{self.base_url}/v1/chat/completions"
-                    chat_body = {
-                        "model": "indic-translate",
-                        "messages": [{"role": "user", "content": text}],
-                        "target_language_code": target_lang,
-                    }
-                    if source_lang:
-                        chat_body["source_language_code"] = source_lang
-                    resp = await client.post(chat_endpoint, headers=headers, json=chat_body)
+        async with self.rate_limiter, httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(endpoint, headers=headers, json=body)
+            if resp.status_code == 404:
+                # Fallback to OpenAI-compatible chat completion route if available
+                chat_endpoint = f"{self.base_url}/v1/chat/completions"
+                chat_body = {
+                    "model": "indic-translate",
+                    "messages": [{"role": "user", "content": text}],
+                    "target_language_code": target_lang,
+                }
+                if source_lang:
+                    chat_body["source_language_code"] = source_lang
+                resp = await client.post(chat_endpoint, headers=headers, json=chat_body)
 
-                if resp.status_code != 200:
-                    raise RuntimeError(f"Indic-Translate API error ({resp.status_code}): {resp.text}")
+            if resp.status_code != 200:
+                raise RuntimeError(f"Indic-Translate API error ({resp.status_code}): {resp.text}")
 
-                data = resp.json()
+            data = resp.json()
 
         # Extract translation string
         translated_text = ""

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
+
 import httpx
 
 from bodhan_eval.cache import DiskCache
@@ -109,12 +110,11 @@ class SpeakClient:
 
         endpoint = f"{self.base_url}/v1/audio/speech"
 
-        async with self.rate_limiter:
-            async with httpx.AsyncClient(timeout=120.0) as client:
-                resp = await client.post(endpoint, headers=headers, json=body)
-                if resp.status_code != 200:
-                    raise RuntimeError(f"Indic-Speak error ({resp.status_code}): {resp.text}")
-                audio_bytes = resp.content
+        async with self.rate_limiter, httpx.AsyncClient(timeout=120.0) as client:
+            resp = await client.post(endpoint, headers=headers, json=body)
+            if resp.status_code != 200:
+                raise RuntimeError(f"Indic-Speak error ({resp.status_code}): {resp.text}")
+            audio_bytes = resp.content
 
         # 4. Record cost
         if self.cost_tracker:

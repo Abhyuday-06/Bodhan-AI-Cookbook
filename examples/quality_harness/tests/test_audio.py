@@ -6,6 +6,7 @@ import io
 import math
 import struct
 import wave
+
 import pytest
 
 from bodhan_eval.checks.audio_analysis import AudioAnalysisCheck

@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import pytest
 from bodhan_eval.normalize import (
     extract_numbers,
     normalize_for_comparison,
     normalize_indic_numerals,
     normalize_punctuation,
-    normalize_unicode,
 )
 
 

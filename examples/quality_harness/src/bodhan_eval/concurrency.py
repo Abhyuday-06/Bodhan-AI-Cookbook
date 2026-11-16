@@ -7,7 +7,8 @@ import functools
 import logging
 import random
 import time
-from typing import Any, Callable, Coroutine, TypeVar
+from collections.abc import Callable, Coroutine
+from typing import Any, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,6 @@ T = TypeVar("T")
 
 class BudgetExceededError(RuntimeError):
     """Raised when evaluation cost exceeds maximum configured budget."""
-    pass
 
 
 class AsyncRateLimiter:

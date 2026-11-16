@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import logging
 import os
-from pathlib import Path
 from dataclasses import dataclass, field
+
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ class Config:
     @property
     def target_langs(self) -> list[str]:
         """Parsed list of target language codes."""
-        return [l.strip() for l in self.langs.split(",") if l.strip()]
+        return [lang.strip() for lang in self.langs.split(",") if lang.strip()]
 
     def validate_api_access(self) -> dict[str, bool]:
         """Check which external capabilities have active credentials."""

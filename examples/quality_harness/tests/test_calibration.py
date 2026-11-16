@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from bodhan_eval.judge.calibration import Calibrator
-from bodhan_eval.types import CheckResult, ErrorCategory, Label, Severity
+from bodhan_eval.types import CheckResult, ErrorCategory, Label
 
 
 def test_calibration_metrics_calculation():

@@ -211,7 +211,13 @@ When `--calibration` is supplied, the harness sweeps confidence thresholds from 
 
 ---
 
-## Output Artifacts
+## Output Artifacts & Sample Report
+
+A pre-computed sample evaluation report generated on the 120-item demo dataset is available in [`sample_report/`](sample_report/):
+- **Executive Summary:** [`sample_report/summary.md`](sample_report/summary.md)
+- **Structured Metrics JSON:** [`sample_report/summary.json`](sample_report/summary.json)
+- **Per-item Flags with Spans:** [`sample_report/items.jsonl`](sample_report/items.jsonl)
+- **Calibration Precision & Recall:** [`sample_report/calibration.json`](sample_report/calibration.json)
 
 Running the harness generates the following report directory:
 ```

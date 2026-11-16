@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import json
-from typing import Any
-
 from bodhan_eval.types import CheckResult
 
 JUDGE_SYSTEM_PROMPT = """You are an expert bilingual quality auditor assessing translations from English into Indian languages.

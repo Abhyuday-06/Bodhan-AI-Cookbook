@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any
 
 from bodhan_eval.types import (
     CalibrationMetrics,
@@ -40,7 +39,7 @@ class Calibrator:
             raise FileNotFoundError(f"Labels file not found: {file_path}")
 
         label_map: dict[str, list[Label]] = {}
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if not line:
