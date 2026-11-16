@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bodhan-lesson"
+version = "0.1.0"
+description = "Turn scanned chapters into structured lessons and verified Indic narration"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "httpx==0.28.1",
+  "Pillow==12.2.0",
+  "python-dotenv==1.1.1",
+  "PyYAML==6.0.2",
+  "RapidFuzz==3.14.1",
+]
+
+[project.optional-dependencies]
+test = ["pytest==8.4.2", "ruff==0.13.3"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

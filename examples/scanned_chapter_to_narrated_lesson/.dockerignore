@@ -1,0 +1,12 @@
+.env
+.env.*
+.cookbook/
+.venv/
+.venv-cookbook/
+**/__pycache__/
+**/*.egg-info/
+inputs/
+outputs/
+out/
+out-*/
+.git/
