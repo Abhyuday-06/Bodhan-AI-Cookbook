@@ -1,0 +1,45 @@
+{"id": "hi-001", "labels": [], "annotator": "human-abhyuday", "notes": "Clean verification item"}
+{"id": "hi-002", "labels": [], "annotator": "human-abhyuday", "notes": "Clean verification item"}
+{"id": "hi-003", "labels": [], "annotator": "human-abhyuday", "notes": "Clean verification item"}
+{"id": "hi-004", "labels": [], "annotator": "human-abhyuday", "notes": "Clean verification item"}
+{"id": "hi-005", "labels": [], "annotator": "human-abhyuday", "notes": "Clean verification item"}
+{"id": "hi-021", "labels": [{"type": "number", "severity": "major", "span": [62, 65]}], "annotator": "human-abhyuday", "notes": "Seeded number defect"}
+{"id": "hi-022", "labels": [{"type": "omission", "severity": "major", "span": [0, 10], "description": "Omitted opening words: एंटीबायोटिक्स बैक्टीरिया के"}], "annotator": "human-abhyuday", "notes": "Seeded omission defect"}
+{"id": "hi-023", "labels": [{"type": "addition", "severity": "major", "span": [42, 51], "description": "Added duplicated extraneous phrase"}], "annotator": "human-abhyuday", "notes": "Seeded addition defect"}
+{"id": "hi-024", "labels": [{"type": "format", "severity": "minor", "span": [76, 83], "description": "Unclosed markdown bold tag"}], "annotator": "human-abhyuday", "notes": "Seeded format defect"}
+{"id": "hi-025", "labels": [{"type": "wrong_language", "severity": "critical", "span": [34, 83], "description": "Untranslated English passage inside Indic translation"}], "annotator": "human-abhyuday", "notes": "Seeded wrong_language defect"}
+{"id": "hi-031", "labels": [{"type": "number", "severity": "major", "span": [27, 30], "description": "Changed number from 196 to 346"}], "annotator": "human-abhyuday", "notes": "Seeded number defect"}
+{"id": "hi-032", "labels": [{"type": "omission", "severity": "major", "span": [0, 10], "description": "Omitted opening words: गुरुत्वाकर्षण के कारण"}], "annotator": "human-abhyuday", "notes": "Seeded omission defect"}
+{"id": "hi-033", "labels": [{"type": "addition", "severity": "major", "span": [66, 85], "description": "Added duplicated extraneous phrase"}], "annotator": "human-abhyuday", "notes": "Seeded addition defect"}
+{"id": "hi-034", "labels": [{"type": "format", "severity": "minor", "span": [51, 58], "description": "Unclosed markdown bold tag"}], "annotator": "human-abhyuday", "notes": "Seeded format defect"}
+{"id": "hi-035", "labels": [{"type": "wrong_language", "severity": "critical", "span": [38, 87], "description": "Untranslated English passage inside Indic translation"}], "annotator": "human-abhyuday", "notes": "Seeded wrong_language defect"}
+{"id": "ta-001", "labels": [], "annotator": "human-abhyuday", "notes": "Clean verification item"}
+{"id": "ta-002", "labels": [], "annotator": "human-abhyuday", "notes": "Clean verification item"}
+{"id": "ta-003", "labels": [], "annotator": "human-abhyuday", "notes": "Clean verification item"}
+{"id": "ta-004", "labels": [], "annotator": "human-abhyuday", "notes": "Clean verification item"}
+{"id": "ta-005", "labels": [], "annotator": "human-abhyuday", "notes": "Clean verification item"}
+{"id": "ta-021", "labels": [{"type": "number", "severity": "major", "span": [77, 80]}], "annotator": "human-abhyuday", "notes": "Seeded number defect"}
+{"id": "ta-022", "labels": [{"type": "omission", "severity": "major", "span": [0, 10], "description": "Omitted opening words: நுண்ணுயிர் எதிர்ப்பிகள் பாக்டீரியா"}], "annotator": "human-abhyuday", "notes": "Seeded omission defect"}
+{"id": "ta-023", "labels": [{"type": "addition", "severity": "major", "span": [55, 68], "description": "Added duplicated extraneous phrase"}], "annotator": "human-abhyuday", "notes": "Seeded addition defect"}
+{"id": "ta-024", "labels": [{"type": "format", "severity": "minor", "span": [82, 89], "description": "Unclosed markdown bold tag"}], "annotator": "human-abhyuday", "notes": "Seeded format defect"}
+{"id": "ta-025", "labels": [{"type": "wrong_language", "severity": "critical", "span": [31, 80], "description": "Untranslated English passage inside Indic translation"}], "annotator": "human-abhyuday", "notes": "Seeded wrong_language defect"}
+{"id": "ta-031", "labels": [{"type": "number", "severity": "major", "span": [26, 29], "description": "Changed number from 196 to 346"}], "annotator": "human-abhyuday", "notes": "Seeded number defect"}
+{"id": "ta-032", "labels": [{"type": "omission", "severity": "major", "span": [0, 10], "description": "Omitted opening words: புவியீர்ப்பு பூமியில் தோராயமாக"}], "annotator": "human-abhyuday", "notes": "Seeded omission defect"}
+{"id": "ta-033", "labels": [{"type": "addition", "severity": "major", "span": [81, 97], "description": "Added duplicated extraneous phrase"}], "annotator": "human-abhyuday", "notes": "Seeded addition defect"}
+{"id": "ta-034", "labels": [{"type": "format", "severity": "minor", "span": [61, 68], "description": "Unclosed markdown bold tag"}], "annotator": "human-abhyuday", "notes": "Seeded format defect"}
+{"id": "ta-035", "labels": [{"type": "wrong_language", "severity": "critical", "span": [42, 91], "description": "Untranslated English passage inside Indic translation"}], "annotator": "human-abhyuday", "notes": "Seeded wrong_language defect"}
+{"id": "bn-001", "labels": [], "annotator": "human-abhyuday", "notes": "Clean verification item"}
+{"id": "bn-002", "labels": [], "annotator": "human-abhyuday", "notes": "Clean verification item"}
+{"id": "bn-003", "labels": [], "annotator": "human-abhyuday", "notes": "Clean verification item"}
+{"id": "bn-004", "labels": [], "annotator": "human-abhyuday", "notes": "Clean verification item"}
+{"id": "bn-005", "labels": [], "annotator": "human-abhyuday", "notes": "Clean verification item"}
+{"id": "bn-021", "labels": [{"type": "number", "severity": "major", "span": [66, 69]}], "annotator": "human-abhyuday", "notes": "Seeded number defect"}
+{"id": "bn-022", "labels": [{"type": "omission", "severity": "major", "span": [0, 10], "description": "Omitted opening words: অ্যান্টিবায়োটিক হলো ব্যাকটেরিয়া"}], "annotator": "human-abhyuday", "notes": "Seeded omission defect"}
+{"id": "bn-023", "labels": [{"type": "addition", "severity": "major", "span": [44, 59], "description": "Added duplicated extraneous phrase"}], "annotator": "human-abhyuday", "notes": "Seeded addition defect"}
+{"id": "bn-024", "labels": [{"type": "format", "severity": "minor", "span": [72, 79], "description": "Unclosed markdown bold tag"}], "annotator": "human-abhyuday", "notes": "Seeded format defect"}
+{"id": "bn-025", "labels": [{"type": "wrong_language", "severity": "critical", "span": [25, 74], "description": "Untranslated English passage inside Indic translation"}], "annotator": "human-abhyuday", "notes": "Seeded wrong_language defect"}
+{"id": "bn-031", "labels": [{"type": "number", "severity": "major", "span": [29, 32], "description": "Changed number from ১৯৬ to 346"}], "annotator": "human-abhyuday", "notes": "Seeded number defect"}
+{"id": "bn-032", "labels": [{"type": "omission", "severity": "major", "span": [0, 10], "description": "Omitted opening words: মহাকর্ষ পৃথিবীতে প্রায়"}], "annotator": "human-abhyuday", "notes": "Seeded omission defect"}
+{"id": "bn-033", "labels": [{"type": "addition", "severity": "major", "span": [62, 80], "description": "Added duplicated extraneous phrase"}], "annotator": "human-abhyuday", "notes": "Seeded addition defect"}
+{"id": "bn-034", "labels": [{"type": "format", "severity": "minor", "span": [56, 63], "description": "Unclosed markdown bold tag"}], "annotator": "human-abhyuday", "notes": "Seeded format defect"}
+{"id": "bn-035", "labels": [{"type": "wrong_language", "severity": "critical", "span": [36, 85], "description": "Untranslated English passage inside Indic translation"}], "annotator": "human-abhyuday", "notes": "Seeded wrong_language defect"}

@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bodhan-eval"
+version = "0.1.0"
+description = "Translation and speech quality evaluation harness for Bodhan AI Indic models"
+readme = "README.md"
+authors = [{name = "Abhyuday"}]
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = [
+    "pydantic>=2.0",
+    "httpx>=0.25",
+    "sacrebleu>=2.3",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-asyncio>=0.21",
+    "ruff>=0.1",
+]
+
+[project.scripts]
+bodhan-eval = "bodhan_eval.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+markers = [
+    "asyncio: mark test as async coroutine",
+]
+
+[tool.ruff]
+line-length = 120
