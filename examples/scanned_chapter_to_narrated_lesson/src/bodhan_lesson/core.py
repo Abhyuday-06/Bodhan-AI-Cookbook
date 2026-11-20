@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from hashlib import sha256
 from pathlib import Path
@@ -111,6 +112,11 @@ class Services:
         self.llm_base = os.getenv("LLM_BASE_URL", "").strip().rstrip("/")
         self.llm_model = os.getenv("LLM_MODEL", "").strip()
         self.llm_key = os.getenv("LLM_API_KEY", "").strip()
+        self.translate_path = None
+        self.translate_path_lock = Lock()
+        self.cooldown = {}
+        self.exhausted = set()
+        self.speech_gate = BoundedSemaphore(1)
 
     def __enter__(self):
         return self
@@ -139,8 +145,10 @@ class Services:
                 return data if binary else json.loads(data)
             if not key:
                 raise StageError(f"missing {KEYS.get(op, 'LLM_API_KEY')}")
-            for attempt in range(1, 4):
+            for attempt in range(1, 5):
                 with self.lock:
+                    if op in self.exhausted:
+                        raise StageError("provider Bodhan credit exhausted")
                     if self.budget is not None and self.projected_inr + estimate > self.budget + 1e-8:
                         raise StageError("estimated Bodhan budget reached")
                     self.projected_inr += estimate
@@ -153,13 +161,19 @@ class Services:
                     params = ({"data": {"model": "indic-transcribe", "language": language},
                                "files": {"file": ("clip.wav", audio, "audio/wav")}}
                               if audio is not None else {"json": body})
-                    with self.gate:
+                    model_gate = self.speech_gate if op == "speak" else nullcontext()
+                    with model_gate, self.gate:
+                        with self.lock:
+                            cooldown = self.cooldown.get(op, 0.0) - monotonic()
+                        if cooldown > 0:
+                            sleep(cooldown)
                         started = monotonic()
                         res = self.client.post(url, headers={"Authorization": f"Bearer {key}"}, **params)
                     status = str(res.status_code)
                     if res.is_success:
                         result = res.content if binary else res.json()
-                        if (binary and not result.startswith(b"RIFF")) or (
+                        if (binary and not (result.startswith(b"RIFF") or
+                                           res.headers.get("content-type", "").startswith("audio/"))) or (
                             not binary and (not isinstance(result, dict) or "error" in result)
                         ):
                             status = "invalid_response"
@@ -180,9 +194,20 @@ class Services:
                     else:
                         retry = res.status_code in {408, 425, 429, 500, 502, 503, 504}
                         try:
-                            delay = min(12.0, max(0.0, float(res.headers.get("Retry-After", 0))))
+                            delay = min(60.0, max(0.0, float(res.headers.get("Retry-After", 0))))
                         except ValueError:
                             pass
+                        if res.status_code == 429:
+                            if any(marker in res.text.lower() for marker in
+                                   ("insufficient credit", "credit balance", "insufficient balance", "out of credit")):
+                                with self.lock:
+                                    self.exhausted.add(op)
+                                status = "credit_exhausted"
+                                retry = False
+                            else:
+                                delay = max(delay, min(45.0, 8.0 * 2 ** (attempt - 1)))
+                                with self.lock:
+                                    self.cooldown[op] = monotonic() + delay
                 except (httpx.TransportError, ValueError, TypeError):
                     pass
                 finally:
@@ -190,7 +215,7 @@ class Services:
                         self.projected_inr += cost - estimate
                 self.record(op, ctx, attempt, status, monotonic() - started,
                             cost_inr=0.0, billing="unknown_on_failure")
-                if not retry or attempt == 3:
+                if not retry or attempt == 4:
                     raise StageError(f"{op} request failed ({status})")
                 sleep(max(delay, 0.45 * 2 ** (attempt - 1) + random.random() * 0.25))
         raise AssertionError("unreachable")
@@ -205,10 +230,38 @@ class Services:
         body = {"text": text, "target_language": target}
         if target != "en":
             body["script"] = script
-        result = self.call("translate", "/translate", ctx, body=body, chars=len(text),
-                           estimate=max(20, len(text.encode("utf-8"))) * 0.00003)
+        estimate = max(20, len(text.encode("utf-8"))) * 0.00003
+        result = None
+        if self.translate_path is None:
+            with self.translate_path_lock:
+                if self.translate_path is None:
+                    try:
+                        result = self.call("translate", "/translate", ctx, body=body,
+                                           chars=len(text), estimate=estimate)
+                        self.translate_path = "/translate"
+                    except StageError as exc:
+                        if str(exc) != "translate request failed (404)":
+                            raise
+                        self.translate_path = "/v1/chat/completions"
+        if result is None and self.translate_path == "/translate":
+            result = self.call("translate", "/translate", ctx, body=body, chars=len(text), estimate=estimate)
+        if result is None:
+            chat = {"model": "indic-translate", "target_language_code": target,
+                    "messages": [{"role": "user", "content": text}]}
+            if "script" in body:
+                chat["script"] = script
+            result = self.call("translate", self.translate_path, ctx, body=chat,
+                               chars=len(text), estimate=estimate)
         value = result.get("translation")
-        if result.get("truncated") or not isinstance(value, str) or not value.strip():
+        truncated = result.get("truncated")
+        if value is None:
+            try:
+                choice = result["choices"][0]
+                value = choice["message"]["content"]
+                truncated = choice.get("finish_reason") in {"length", "max_tokens"}
+            except (KeyError, IndexError, TypeError) as exc:
+                raise StageError("translation response missing text") from exc
+        if truncated or not isinstance(value, str) or not value.strip():
             raise StageError("translation truncated or empty")
         return value
 
@@ -219,7 +272,7 @@ class Services:
         return self.call("speak", "/v1/audio/speech", ctx, binary=True, chars=len(text),
                          estimate=len(text) * 0.0006, force_key=retry_tag,
                          body={"model": "indic-speak", "input": text, "voice": voice,
-                               "instructions": json.dumps(instructions)})
+                               "instructions": json.dumps(instructions), "response_format": "wav"})
 
     def transcribe(self, data, language, seconds, ctx):
         result = self.call("transcribe", "/v1/audio/transcriptions", ctx, audio=data,

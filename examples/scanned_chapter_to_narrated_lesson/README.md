@@ -105,6 +105,8 @@ python -m bodhan_lesson --input inputs/equations-ml.pdf --langs hi --out outputs
 
 **Live demo outputs and video:** pending the hosted run. The [demo checklist](DEMO.md) records the artifacts and checks to capture. Textbook PDFs and generated textbook content are not included in this recipe.
 
+A separate live smoke run used two synthetic pages and Gemini 3.1 Flash-Lite on Vertex AI. All three languages translated and narrated both sections. Maximum accepted section CER was 0.019. The full MP3s measured −16.68 LUFS for Hindi, −16.49 for Tamil, and −16.60 for Bengali. The cached retry run took 80.3 seconds, including Indic-Speak rate-limit backoff.
+
 ### Tests
 
 ```bash

@@ -32,6 +32,28 @@ def wav_info(data):
         raise StageError("Indic-Speak returned invalid WAV data") from exc
 
 
+def speak_wav(data):
+    """Normalize the hosted WAV/MP3 response before sending it back to ASR."""
+    if data.startswith(b"RIFF"):
+        try:
+            wav_info(data)
+            return data
+        except StageError:
+            pass
+    result = subprocess.run(
+        ["ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error", "-i", "pipe:0",
+         "-ac", "1", "-ar", "24000", "-f", "s16le", "pipe:1"],
+        input=data, capture_output=True, timeout=45,
+    )
+    if result.returncode or not result.stdout:
+        raise StageError("Indic-Speak audio could not be decoded")
+    buf = BytesIO()
+    with wave.open(buf, "wb") as output:
+        output.setparams((1, 2, 24000, 0, "NONE", "not compressed"))
+        output.writeframes(result.stdout)
+    return buf.getvalue()
+
+
 def ff(*args, program="ffmpeg"):
     try:
         base = [program, "-hide_banner", "-nostdin", "-y"] if program == "ffmpeg" else [program]
@@ -105,7 +127,8 @@ def verified_clip(svc, input_text, language, voice, style, ctx, attempts, depth=
         info = {"text": input_text, "attempt": attempt, "split_depth": depth}
         attempts.append(info)
         try:
-            audio = svc.speak(input_text, language, voice, ctx, style, "" if attempt == 1 else f"qa-retry-{attempt}")
+            audio = speak_wav(svc.speak(input_text, language, voice, ctx, style,
+                                       "" if attempt == 1 else f"qa-retry-{attempt}"))
             seconds, raw = wav_info(audio)
             info["duration_s"] = round(seconds, 3)
             if seconds > 29.5:
