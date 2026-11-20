@@ -1,0 +1,7 @@
+.env*
+.venv*
+inputs
+outputs
+out*
+sample_data
+__pycache__

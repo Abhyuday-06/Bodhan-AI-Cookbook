@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bodhan-dub"
+version = "0.1.0"
+requires-python = ">=3.10"
+description = "Turn English video into a timed Bodhan dub and subtitles"
+dependencies = ["httpx==0.28.1", "numpy==2.2.6", "PyYAML==6.0.2", "python-dotenv==1.1.1", "rapidfuzz==3.14.1", "webrtcvad-wheels==2.0.14"]
+
+[project.optional-dependencies]
+test = ["pytest==8.4.2", "ruff==0.13.3"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
