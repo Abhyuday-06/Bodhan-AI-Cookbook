@@ -247,6 +247,8 @@ report/
 
 ## Testing
 
+On a three-item live smoke run with one item each in Hindi, Tamil, and Bengali, the harness generated three WAV files, back-transcribed the audio, and obtained three Gemini 3.1 Flash-Lite judge responses through Vertex AI. The run reported ₹0.0913 in new Bodhan usage in 24.3 seconds with some cached calls.
+
 Run the automated test suite covering all checks, normalization, span alignment, audio analysis, caching, and end-to-end integration:
 ```bash
 pytest tests/ -v

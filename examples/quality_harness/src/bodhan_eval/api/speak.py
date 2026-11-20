@@ -105,6 +105,7 @@ class SpeakClient:
             "model": "indic-speak",
             "input": text,
             "voice": chosen_voice,
+            "response_format": "wav",
             "instructions": json.dumps(instructions),
         }
 
@@ -113,8 +114,10 @@ class SpeakClient:
         async with self.rate_limiter, httpx.AsyncClient(timeout=120.0) as client:
             resp = await client.post(endpoint, headers=headers, json=body)
             if resp.status_code != 200:
-                raise RuntimeError(f"Indic-Speak error ({resp.status_code}): {resp.text}")
+                raise RuntimeError(f"Indic-Speak error ({resp.status_code})")
             audio_bytes = resp.content
+            if not audio_bytes.startswith(b"RIFF"):
+                raise RuntimeError("Indic-Speak did not return the requested WAV audio")
 
         # 4. Record cost
         if self.cost_tracker:

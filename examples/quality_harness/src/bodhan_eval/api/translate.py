@@ -78,12 +78,14 @@ class TranslateClient:
                     "messages": [{"role": "user", "content": text}],
                     "target_language_code": target_lang,
                 }
+                if target_lang != "en":
+                    chat_body["script"] = script
                 if source_lang:
                     chat_body["source_language_code"] = source_lang
                 resp = await client.post(chat_endpoint, headers=headers, json=chat_body)
 
             if resp.status_code != 200:
-                raise RuntimeError(f"Indic-Translate API error ({resp.status_code}): {resp.text}")
+                raise RuntimeError(f"Indic-Translate API error ({resp.status_code})")
 
             data = resp.json()
 
@@ -94,10 +96,15 @@ class TranslateClient:
             translated_text = data["translation"]
             output_tokens = data.get("usage", {}).get("output_tokens", max(1, len(translated_text) // 4))
         elif "choices" in data and len(data["choices"]) > 0:
-            translated_text = data["choices"][0]["message"]["content"]
+            choice = data["choices"][0]
+            if choice.get("finish_reason") in {"length", "max_tokens"}:
+                raise RuntimeError("Indic-Translate output was truncated")
+            translated_text = choice["message"]["content"]
             output_tokens = data.get("usage", {}).get("completion_tokens", max(1, len(translated_text) // 4))
         else:
-            raise ValueError(f"Unexpected response structure from translate endpoint: {data}")
+            raise ValueError("Unexpected response structure from Indic-Translate")
+        if data.get("truncated") or not isinstance(translated_text, str) or not translated_text.strip():
+            raise RuntimeError("Indic-Translate returned empty or truncated text")
 
         # Record cost
         if self.cost_tracker:
