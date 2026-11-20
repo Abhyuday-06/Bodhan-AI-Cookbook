@@ -112,9 +112,9 @@ class SpeakClient:
         endpoint = f"{self.base_url}/v1/audio/speech"
 
         async with self.rate_limiter, httpx.AsyncClient(timeout=120.0) as client:
+            await self.rate_limiter.wait_for("indic-speak")
             resp = await client.post(endpoint, headers=headers, json=body)
-            if resp.status_code != 200:
-                raise RuntimeError(f"Indic-Speak error ({resp.status_code})")
+            self.rate_limiter.check_response("indic-speak", resp)
             audio_bytes = resp.content
             if not audio_bytes.startswith(b"RIFF"):
                 raise RuntimeError("Indic-Speak did not return the requested WAV audio")

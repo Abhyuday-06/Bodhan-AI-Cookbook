@@ -69,6 +69,7 @@ class ItemReport(BaseModel):
     audio: str | bytes | None = None
     reference: str | None = None
     checks_run: list[str] = Field(default_factory=list)
+    checks_unavailable: dict[str, str] = Field(default_factory=dict)
     flags: list[CheckResult] = Field(default_factory=list)
     score: float = 10.0
 

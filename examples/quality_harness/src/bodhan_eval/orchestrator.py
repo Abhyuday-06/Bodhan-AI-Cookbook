@@ -148,6 +148,7 @@ class Orchestrator:
     async def _evaluate_single_item(self, item: DatasetItem) -> ItemReport:
         """Run all applicable checks on a single item."""
         checks_run: list[str] = []
+        checks_unavailable: dict[str, str] = {}
         flags: list[CheckResult] = []
         translation = item.translation or ""
 
@@ -169,11 +170,15 @@ class Orchestrator:
 
         # Phase 2: Round-Trip Back-Translation Check
         if self.translate_client and translation and not self.cost_tracker.is_over_budget():
-            checks_run.append(self.backtranslation_check.name)
-            res = await self.backtranslation_check.run(
-                item, translation, item.lang, translate_client=self.translate_client
-            )
-            flags.extend(res)
+            try:
+                res = await self.backtranslation_check.run(
+                    item, translation, item.lang, translate_client=self.translate_client
+                )
+                checks_run.append(self.backtranslation_check.name)
+                flags.extend(res)
+            except Exception as exc:
+                checks_unavailable[self.backtranslation_check.name] = type(exc).__name__
+                logger.warning("Back-translation could not run for item %s (%s)", item.id, type(exc).__name__)
 
         # Phase 3: Speech Quality Check (Selective on audio)
         if self.transcribe_client and item.audio and not self.cost_tracker.is_over_budget():
@@ -202,6 +207,7 @@ class Orchestrator:
             audio=item.audio,
             reference=item.reference,
             checks_run=checks_run,
+            checks_unavailable=checks_unavailable,
             flags=flags,
             score=score,
         )

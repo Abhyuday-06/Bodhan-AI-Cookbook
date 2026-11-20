@@ -65,14 +65,7 @@ class BackTranslationCheck(BaseCheck):
             logger.debug("No translate client available; skipping back-translation check.")
             return []
 
-        try:
-            back_translated = await translate_client.back_translate(
-                text=translation,
-                source_lang=lang
-            )
-        except Exception as e:
-            logger.warning(f"Back-translation failed for item {item.id}: {e}")
-            return []
+        back_translated = await translate_client.back_translate(text=translation, source_lang=lang)
 
         if not back_translated:
             return []

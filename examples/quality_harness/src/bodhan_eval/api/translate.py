@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -29,6 +30,8 @@ class TranslateClient:
         self.cache = cache
         self.cost_tracker = cost_tracker
         self.rate_limiter = rate_limiter or AsyncRateLimiter(5)
+        self._route: str | None = None
+        self._route_lock = asyncio.Lock()
 
     @retry_with_backoff(max_retries=3, initial_delay=1.0)
     async def translate(
@@ -61,32 +64,33 @@ class TranslateClient:
         body: dict[str, Any] = {
             "text": text,
             "target_language": target_lang,
-            "script": script,
         }
-        if source_lang:
-            body["source_language"] = source_lang
-
-        endpoint = f"{self.base_url}/translate"
+        if target_lang != "en":
+            body["script"] = script
+        chat_body = {
+            "model": "indic-translate",
+            "messages": [{"role": "user", "content": text}],
+            "target_language_code": target_lang,
+        }
+        if target_lang != "en":
+            chat_body["script"] = script
 
         async with self.rate_limiter, httpx.AsyncClient(timeout=60.0) as client:
-            resp = await client.post(endpoint, headers=headers, json=body)
-            if resp.status_code == 404:
-                # Fallback to OpenAI-compatible chat completion route if available
-                chat_endpoint = f"{self.base_url}/v1/chat/completions"
-                chat_body = {
-                    "model": "indic-translate",
-                    "messages": [{"role": "user", "content": text}],
-                    "target_language_code": target_lang,
-                }
-                if target_lang != "en":
-                    chat_body["script"] = script
-                if source_lang:
-                    chat_body["source_language_code"] = source_lang
-                resp = await client.post(chat_endpoint, headers=headers, json=chat_body)
-
-            if resp.status_code != 200:
-                raise RuntimeError(f"Indic-Translate API error ({resp.status_code})")
-
+            await self.rate_limiter.wait_for("indic-translate")
+            resp = None
+            if self._route is None:
+                async with self._route_lock:
+                    if self._route is None:
+                        probe = await client.post(f"{self.base_url}/translate", headers=headers, json=body)
+                        if probe.status_code == 404:
+                            self._route = "/v1/chat/completions"
+                        else:
+                            self.rate_limiter.check_response("indic-translate", probe)
+                            self._route, resp = "/translate", probe
+            if resp is None:
+                payload = body if self._route == "/translate" else chat_body
+                resp = await client.post(f"{self.base_url}{self._route}", headers=headers, json=payload)
+            self.rate_limiter.check_response("indic-translate", resp)
             data = resp.json()
 
         # Extract translation string

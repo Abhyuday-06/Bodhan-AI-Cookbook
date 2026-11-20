@@ -94,9 +94,9 @@ class TranscribeClient:
             data["language"] = lang
 
         async with self.rate_limiter, httpx.AsyncClient(timeout=90.0) as client:
+            await self.rate_limiter.wait_for("indic-transcribe")
             resp = await client.post(endpoint, headers=headers, files=files, data=data)
-            if resp.status_code != 200:
-                raise RuntimeError(f"Indic-Transcribe error ({resp.status_code}): {resp.text}")
+            self.rate_limiter.check_response("indic-transcribe", resp)
             result_json = resp.json()
 
         transcribed_text = result_json.get("text", "")

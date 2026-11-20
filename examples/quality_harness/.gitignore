@@ -5,8 +5,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 .bodhan_cache/
-report/
-previous_report/
+/report/
+/previous_report/
 outputs/*
 !outputs/.gitkeep
 .pytest_cache/

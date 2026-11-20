@@ -10,6 +10,8 @@ import time
 from collections.abc import Callable, Coroutine
 from typing import Any, TypeVar
 
+import httpx
+
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
@@ -19,6 +21,12 @@ class BudgetExceededError(RuntimeError):
     """Raised when evaluation cost exceeds maximum configured budget."""
 
 
+class ProviderHTTPError(RuntimeError):
+    def __init__(self, model: str, status: int, retryable: bool):
+        super().__init__(f"{model} HTTP {status}")
+        self.retryable = retryable
+
+
 class AsyncRateLimiter:
     """Semaphore-based concurrency limiter for async requests."""
 
@@ -26,6 +34,34 @@ class AsyncRateLimiter:
         self.semaphore = asyncio.Semaphore(max_concurrent)
         self.max_concurrent = max_concurrent
         self.active_tasks = 0
+        self._next_request: dict[str, float] = {}
+        self._spacing: dict[str, float] = {}
+
+    async def wait_for(self, model: str) -> None:
+        while True:
+            now = time.monotonic()
+            delay = self._next_request.get(model, 0) - now
+            if delay <= 0:
+                self._next_request[model] = now + self._spacing.get(model, 0)
+                return
+            await asyncio.sleep(delay)
+
+    def check_response(self, model: str, response: httpx.Response) -> None:
+        if response.is_success:
+            return
+        status = response.status_code
+        credit = status == 429 and any(marker in response.text.casefold() for marker in
+                    ("insufficient credit", "credit balance", "insufficient balance", "out of credit"))
+        if status == 429 and not credit:
+            # A shared cooldown prevents a burst of independent item retries.
+            # After a throttle, keep roughly 14 requests per minute per model.
+            try:
+                delay = min(60., max(1., float(response.headers.get("Retry-After", "45"))))
+            except ValueError:
+                delay = 45.
+            self._spacing[model] = 4.2
+            self._next_request[model] = max(self._next_request.get(model, 0), time.monotonic() + delay)
+        raise ProviderHTTPError(model, status, status in {408, 429, 500, 502, 503, 504} and not credit)
 
     async def __aenter__(self):
         await self.semaphore.acquire()
@@ -57,7 +93,10 @@ def retry_with_backoff(
                 except Exception as err:
                     last_err = err
                     err_str = str(err).lower()
-                    is_transient = any(code in err_str for code in ["429", "500", "502", "503", "timeout", "connection reset"])
+                    is_transient = (err.retryable if isinstance(err, ProviderHTTPError) else
+                                    isinstance(err, httpx.TransportError) or any(
+                                        code in err_str for code in ["429", "500", "502", "503", "timeout", "connection reset"]
+                                    ))
                     if attempt == max_retries or not is_transient:
                         logger.error(f"Non-retryable or max retries reached for {func.__name__}: {err}")
                         raise err
