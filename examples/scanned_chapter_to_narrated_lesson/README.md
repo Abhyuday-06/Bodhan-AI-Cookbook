@@ -93,7 +93,7 @@ out/
 
 A failed page or language does not prevent other pages and languages from finishing. Exit code `1` means the run failed or has incomplete artifacts; read `report.json`. Each section records the source block IDs, Markdown line spans, language and structure checks, narration coverage, selected ASR, CER, retries and measured loudness. Doubtful text is excluded from translation and speech. Cached responses may contain source text and audio; treat the output and cache as local data. Every narration is AI-generated; MP3 metadata and JSON indicate this.
 
-Use `--brief-narration` to spend fewer speech credits. It selects one short, intact statement from the verified narration script for each section. The pipeline still writes the translated Markdown, records which text the narration omitted, and labels intentionally shortened coverage in the report.
+Use `--brief-narration` to spend fewer speech credits. It selects a short, intact statement from the verified translation for each section and can try one alternate when verification fails. The pipeline writes the translated Markdown, records narration omissions, and labels shortened coverage in the report.
 
 ### Demonstrations
 
@@ -101,11 +101,30 @@ The `scripts/prepare_demo.py` helper downloads the [required NCERT Lines and Ang
 
 ```bash
 python scripts/prepare_demo.py
-python -m bodhan_lesson --input inputs/lines-and-angles.pdf --langs hi,ta,bn --out outputs/ncert
-python -m bodhan_lesson --input inputs/equations-ml.pdf --langs hi --out outputs/scert
+python -m bodhan_lesson --input inputs/lines-and-angles.pdf --langs hi,ta,bn --out outputs/ncert --brief-narration
+python -m bodhan_lesson --input inputs/equations-ml.pdf --langs hi --out outputs/scert --brief-narration
 ```
 
-The full textbook walkthrough requires additional hosted Indic-Speak capacity. The pipeline can resume from cached OCR, translation and checked speech after the allowance is restored. The [demo checklist](DEMO.md) lists the artifacts and checks for the recording. The textbook PDFs and derived lesson content stay in local output folders.
+The hosted runs processed both textbook chapters. The table shows verified translated blocks and sections with accepted audio. The final speech passes used `--brief-narration`, which selects a short translated statement per section and leaves the translated Markdown and unavailable-block markers in the output. The validation report separates intentional narration omissions from unavailable translations.
+
+| Chapter | Target | Run status | Verified blocks | Sections with audio | New attributed cost |
+| --- | --- | --- | ---: | ---: | ---: |
+| NCERT Lines and Angles | Hindi | partial | 272 / 273 | 13 / 14 | ₹0.0427 |
+| NCERT Lines and Angles | Tamil | partial | 272 / 273 | 11 / 14 | ₹0.3258 |
+| NCERT Lines and Angles | Bengali | partial | 271 / 273 | 13 / 14 | ₹0.0987 |
+| SCERT Kerala Equations | Hindi | partial | 181 / 186 | 7 / 7 | ₹0.2456 |
+
+The first NCERT section contains a document identifier and is skipped for speech. Tamil sections 7 and 11 failed back-transcription and have no audio. All four assembled tracks passed the −16 LUFS ±1 target.
+
+- NCERT Lines and Angles (en) processed 20 of 20 pages. The continuation took 238.44 seconds and added ₹0.4672 (₹0.0234 per input page).
+- SCERT Kerala Equations (ml) processed 12 of 12 pages. The continuation took 56.67 seconds and added ₹0.2456 (₹0.0205 per input page).
+- Before the recovery pass, the recorded NCERT continuation took 9079.51 seconds and added ₹3.6713. Provider rate limits and retries contributed to its runtime.
+
+The figures reflect reused provider caches and exclude Gemini charges. Shared calls such as OCR contribute to the chapter totals. See the [validation report](https://github.com/Abhyuday-06/Bodhan-AI-Cookbook/releases/download/narrated-lesson-takehome-demo/narrated-lesson-validation.json) for measured CER, loudness and costs.
+
+The walkthrough replays the recorded chapter runs and plays excerpts from the AI-generated narration. [Demo walkthrough](https://github.com/Abhyuday-06/Bodhan-AI-Cookbook/releases/download/narrated-lesson-takehome-demo/narrated-lesson-demo.mp4)
+
+The output archive contains a short verified audio sample per chapter and target language. [Audio samples and validation metrics](https://github.com/Abhyuday-06/Bodhan-AI-Cookbook/releases/download/narrated-lesson-takehome-demo/narrated-lesson-outputs.zip)
 
 A separate live smoke run used two synthetic pages and Gemini 3.1 Flash-Lite on Vertex AI. All three languages translated and narrated both sections. Maximum accepted section CER was 0.019. The full MP3s measured −16.68 LUFS for Hindi, −16.49 for Tamil, and −16.60 for Bengali. The cached retry run took 80.3 seconds, including Indic-Speak rate-limit backoff.
 

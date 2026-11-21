@@ -7,4 +7,4 @@
 5. Add reviewer-accessible links to the live reports, permissible output samples and video in the README and PR. Keep the textbooks and full derived content out of the repo; share only material you are allowed to redistribute. Check access from a signed-out session.
 6. Run `make check` from the Cookbook root and the recipe tests from this folder. Open the PR with the [draft](PR_DESCRIPTION.md); submit its URL and final commit SHA on the assignment email thread.
 
-Current status: the two-page hosted smoke test produced verified full MP3s for Hindi, Tamil and Bengali. The full textbook walkthrough requires additional hosted Indic-Speak capacity. For the chapter runs, record the provider model, elapsed time, per-language coverage, section CER and LUFS, page costs and unresolved warnings.
+The README documents the measured results and the links to reviewer evidence. See [demonstrations](README.md#demonstrations).

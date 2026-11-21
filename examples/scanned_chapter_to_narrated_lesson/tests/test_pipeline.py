@@ -31,11 +31,17 @@ def test_brief_narration_keeps_an_intact_statement_and_its_source():
         {"text": "Section heading", "source_blocks": ["b1"], "policy": "heading"},
         {"text": "A straight angle measures 180 degrees. It can be split into two angles.",
          "source_blocks": ["b2"], "policy": "read_prose"},
+        {"text": "CH10-B4", "source_blocks": ["b3"], "policy": "read_prose"},
     ]
     assert brief_section_script(items) == [
         {"text": "A straight angle measures 180 degrees.", "source_blocks": ["b2"], "policy": "read_prose"},
+        {"text": "It can be split into two angles.", "source_blocks": ["b2"], "policy": "read_prose"},
     ]
     assert items[1]["text"].endswith("two angles.")
+    assert brief_section_script([
+        {"text": "Figure 4.2", "source_blocks": ["b4"], "policy": "caption"},
+        items[0],
+    ])[0] == items[0]
 
 
 def test_short_prose_groups_keep_block_provenance_and_structural_boundaries():

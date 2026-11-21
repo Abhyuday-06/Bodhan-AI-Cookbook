@@ -91,26 +91,39 @@ def run_section(svc, section, src, lang, glossary, voice, style, mixed, brief, d
                                  "<!-- Translation unavailable: " + ", ".join(block.ids) + " -->",
                                  asset=block.asset))
         checks.append(check)
-    shortened = False
     if brief:
-        items, diagnostics = brief_script(svc, section.blocks, translated, src, lang, glossary, section.index, mixed)
+        candidates, diagnostics = brief_script(svc, section.blocks, translated, src, lang, glossary, section.index, mixed)
         planned_blocks = {id_ for block in translated if block.kind != "code" for id_ in block.ids}
-        translated_chars = sum(len(block.text) for block in translated if block.kind != "code")
-        spoken_chars = sum(len(item["text"]) for item in items)
-        shortened = spoken_chars < translated_chars
-        diagnostics.append({"policy": "brief_narration", "translated_chars": translated_chars,
-                            "selected_chars": spoken_chars, "reason": "short excerpt selected for synthesis"})
+        versions = [[candidate] for candidate in candidates] or [[]]
     else:
         items, diagnostics = script_section(svc, section.blocks, translated, src, lang, glossary, section.index, mixed)
         planned_blocks = {id_ for item in items for id_ in item["source_blocks"]}
+        versions = [items]
     title = next((HEADING_PREFIX.sub("", b.text) for b in translated if b.text and b.kind in HEADS),
                  f"{section.index:02d}")
     file = dest / "narration" / f"{section.index:02d}-{slug(title, section.index)}.{lang}.mp3"
     wav = work / f"{section.index:03d}.wav"
-    try:
-        audio = synth_section(svc, items, lang, voice, style, section.index, file, wav)
-    except StageError as exc:
-        audio = {"status": "failed", "error": public_error(exc), "file": None, "duration_s": None, "cer": None}
+    for items in versions:
+        try:
+            audio = synth_section(svc, items, lang, voice, style, section.index, file, wav)
+        except StageError as exc:
+            audio = {"status": "failed", "error": public_error(exc), "file": None, "duration_s": None, "cer": None}
+        if audio.get("file") or not brief:
+            break
+        reasons = [audio.get("error") or audio.get("fatal") or ""]
+        reasons.extend(chunk["reason"] for chunk in audio.get("failed_chunks", []))
+        diagnostics.append({"policy": "brief_narration_rejected", "blocks": items[0]["source_blocks"] if items else [],
+                            "reason": "; ".join(filter(None, reasons)) or "no speakable excerpt"})
+        if any("budget" in reason or "credit exhausted" in reason for reason in reasons):
+            break
+    shortened = False
+    if brief:
+        translated_chars = sum(len(block.text) for block in translated if block.kind != "code")
+        spoken_chars = sum(len(item["text"]) for item in items)
+        shortened = spoken_chars < translated_chars
+        diagnostics.append({"policy": "brief_narration", "translated_chars": translated_chars,
+                            "selected_chars": spoken_chars,
+                            "reason": "short excerpt selected for synthesis" if items else "no speakable excerpt"})
     covered_ids = {id_ for item in items for id_ in item["source_blocks"]}
     missing = [{"blocks": list(b.ids), "reason": "omitted_in_brief_narration" if set(b.ids) <= planned_blocks
                 else "translation_or_script_unavailable"} for b in section.blocks

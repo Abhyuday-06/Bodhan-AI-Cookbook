@@ -288,23 +288,25 @@ def script_section(svc, sources, translated, source, language, glossary, sec, mi
 
 
 def brief_script(svc, sources, translated, source, language, glossary, sec, mixed):
-    """Plan a single excerpt before spending calls on unselected structural readings."""
-    candidates = [
-        {"text": " ".join(plain_md(block.text).split()), "source_blocks": list(block.ids),
-         "policy": "heading" if block.kind in HEADS else "read_prose"}
-        for block in translated
-        if block.kind not in {"equation", "table", "figure", "code"} and not MATH.search(block.text)
-    ]
+    """Plan an excerpt and a fallback from prose before paying for structural readings."""
+    candidates = []
+    for block in translated:
+        if block.kind in {"equation", "table", "figure", "code"}:
+            continue
+        policy = "heading" if block.kind in HEADS else "caption" if block.kind == "caption" else "read_prose"
+        candidates.append({"text": " ".join(plain_md(block.text).split()), "source_blocks": list(block.ids),
+                           "policy": policy})
     selected = brief_section_script(candidates) if not mixed else []
     if selected:
         return selected, []
-    diagnostics = []
+    diagnostics, selected = [], []
     for block in translated:
         if block.kind == "code":
             continue
         items, notes = script_section(svc, sources, [block], source, language, glossary, sec, mixed)
         diagnostics.extend(notes)
-        selected = brief_section_script(items)
-        if selected:
-            return selected, diagnostics
-    return [], diagnostics
+        selected.extend(brief_section_script(items))
+        selected = brief_section_script(selected)
+        if len(selected) == 2:
+            break
+    return selected, diagnostics

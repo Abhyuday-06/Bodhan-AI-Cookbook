@@ -231,16 +231,26 @@ def join_short_prose(items, limit=210):
 
 
 def brief_section_script(items, preferred_chars=140):
-    """Select one short, intact statement from already translated material."""
+    """Rank up to two distinct, intact statements from translated material."""
     candidates = []
-    for index, item in enumerate(items):
-        statement = re.split(r"(?<!\d\.)(?<=[.!?।॥؟。])\s+", item["text"].strip(), maxsplit=1)[0]
-        if len(statement) > 210 or not any(letter.isalpha() for letter in statement):
-            continue
-        policy = item["policy"]
-        rank = (len(statement) > preferred_chars, policy == "heading", index)
-        candidates.append((rank, {**item, "text": statement}))
-    return [min(candidates, key=lambda candidate: candidate[0])[1]] if candidates else []
+    seen = set()
+    for item in items:
+        has_math_markup = "$" in item["text"] or "\\" in item["text"]
+        sentences = re.split(r"(?<!\d\.)(?<=[.!?।॥؟。])\s+", item["text"].strip())
+        for index, statement in enumerate(sentences):
+            if (len(statement) > 210 or not any(letter.isalpha() for letter in statement)
+                    or "$" in statement or "\\" in statement
+                    or re.fullmatch(r"(?=[A-Z0-9_-]*\d)[A-Z0-9_-]+", statement)):
+                continue
+            if statement in seen:
+                continue
+            seen.add(statement)
+            policy = item["policy"]
+            text_priority = 2 if policy == "caption" or policy.startswith("figure_") else int(policy == "heading")
+            rank = (len(statement) > preferred_chars, text_priority,
+                    has_math_markup, index > 0, len(statement) < 45)
+            candidates.append((rank, {**item, "text": statement}))
+    return [item for _, item in sorted(candidates, key=lambda candidate: candidate[0])[:2]]
 
 
 def synth_section(svc, items, language, voice, style, section, file, wav_file):

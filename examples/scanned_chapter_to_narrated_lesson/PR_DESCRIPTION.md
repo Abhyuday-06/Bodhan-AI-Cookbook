@@ -40,11 +40,28 @@ Hosted Indic-OCR with HTML tables, Indic-Translate including the explicit Englis
 
 ## Results
 
-Pending hosted NCERT Hindi/Tamil/Bengali and Malayalam-source runs. Add live output links, structure and coverage results, CER and loudness from the final reports here before opening the PR.
+The hosted runs processed both textbook chapters. The table shows verified translated blocks and sections with accepted audio. The final speech passes used `--brief-narration`, which selects a short translated statement per section and leaves the translated Markdown and unavailable-block markers in the output. The validation report separates intentional narration omissions from unavailable translations.
+
+| Chapter | Target | Run status | Verified blocks | Sections with audio | New attributed cost |
+| --- | --- | --- | ---: | ---: | ---: |
+| NCERT Lines and Angles | Hindi | partial | 272 / 273 | 13 / 14 | ₹0.0427 |
+| NCERT Lines and Angles | Tamil | partial | 272 / 273 | 11 / 14 | ₹0.3258 |
+| NCERT Lines and Angles | Bengali | partial | 271 / 273 | 13 / 14 | ₹0.0987 |
+| SCERT Kerala Equations | Hindi | partial | 181 / 186 | 7 / 7 | ₹0.2456 |
+
+The first NCERT section contains a document identifier and is skipped for speech. Tamil sections 7 and 11 failed back-transcription and have no audio. All four assembled tracks passed the −16 LUFS ±1 target.
+
+- NCERT Lines and Angles (en) processed 20 of 20 pages. The continuation took 238.44 seconds and added ₹0.4672 (₹0.0234 per input page).
+- SCERT Kerala Equations (ml) processed 12 of 12 pages. The continuation took 56.67 seconds and added ₹0.2456 (₹0.0205 per input page).
+- Before the recovery pass, the recorded NCERT continuation took 9079.51 seconds and added ₹3.6713. Provider rate limits and retries contributed to its runtime.
+
+The figures reflect reused provider caches and exclude Gemini charges. Shared calls such as OCR contribute to the chapter totals. See the [validation report](https://github.com/Abhyuday-06/Bodhan-AI-Cookbook/releases/download/narrated-lesson-takehome-demo/narrated-lesson-validation.json) for measured CER, loudness and costs.
 
 ## Demo video
 
-Pending the ≤5-minute recording of the full run and its outputs.
+The walkthrough replays the recorded chapter runs and plays excerpts from the AI-generated narration. [Demo walkthrough](https://github.com/Abhyuday-06/Bodhan-AI-Cookbook/releases/download/narrated-lesson-takehome-demo/narrated-lesson-demo.mp4)
+
+The output archive contains a short verified audio sample per chapter and target language. [Audio samples and validation metrics](https://github.com/Abhyuday-06/Bodhan-AI-Cookbook/releases/download/narrated-lesson-takehome-demo/narrated-lesson-outputs.zip)
 
 ## Trade-offs and known limitations
 
@@ -52,7 +69,11 @@ Numeric and structural invariants are exact; translation semantics and OCR recal
 
 ## Cost and runtime
 
-Pending measured wall time and estimated INR per page and language from a cold hosted run. Estimates use the posted Bodhan rates; LLM cost is separate.
+- NCERT Lines and Angles (en) processed 20 of 20 pages. The continuation took 238.44 seconds and added ₹0.4672 (₹0.0234 per input page).
+- SCERT Kerala Equations (ml) processed 12 of 12 pages. The continuation took 56.67 seconds and added ₹0.2456 (₹0.0205 per input page).
+- Before the recovery pass, the recorded NCERT continuation took 9079.51 seconds and added ₹3.6713. Provider rate limits and retries contributed to its runtime.
+
+The continuation figures reflect successful cached work and new Bodhan requests. The separate OCR cache warm-up for the Malayalam chapter used an estimated ₹2.40. Gemini usage is outside the Bodhan INR totals.
 
 ## AI assistance
 
