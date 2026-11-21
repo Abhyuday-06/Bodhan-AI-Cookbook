@@ -5,6 +5,7 @@ from collections import Counter
 from contextlib import nullcontext
 from dataclasses import dataclass, field
 from hashlib import sha256
+from math import isfinite
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from threading import BoundedSemaphore, Lock
@@ -115,6 +116,13 @@ class Services:
         self.translate_path = None
         self.translate_path_lock = Lock()
         self.cooldown = {}
+        try:
+            self.request_interval = float(os.getenv("BODHAN_REQUEST_INTERVAL_S", "0"))
+        except ValueError as exc:
+            raise StageError("BODHAN_REQUEST_INTERVAL_S must be a number") from exc
+        if not isfinite(self.request_interval) or self.request_interval < 0:
+            raise StageError("BODHAN_REQUEST_INTERVAL_S must be finite and nonnegative")
+        self.throttled = set()
         self.exhausted = set()
         self.speech_gate = BoundedSemaphore(1)
 
@@ -130,6 +138,19 @@ class Services:
         with self.lock:
             self.events.append(event)
         log("provider_call", **event)
+
+    def wait_for_slot(self, op):
+        if op == "llm":
+            return
+        while True:
+            with self.lock:
+                now = monotonic()
+                wait = self.cooldown.get(op, 0.0) - now
+                if wait <= 0:
+                    interval = max(self.request_interval, 6.2 if op in self.throttled else 0.0)
+                    self.cooldown[op] = now + interval
+                    return
+            sleep(wait)
 
     def call(self, op, route, ctx, *, body=None, audio=None, language=None, estimate=0.0,
              duration=0.0, chars=0, binary=False, force_key=""):
@@ -163,10 +184,7 @@ class Services:
                               if audio is not None else {"json": body})
                     model_gate = self.speech_gate if op == "speak" else nullcontext()
                     with model_gate, self.gate:
-                        with self.lock:
-                            cooldown = self.cooldown.get(op, 0.0) - monotonic()
-                        if cooldown > 0:
-                            sleep(cooldown)
+                        self.wait_for_slot(op)
                         started = monotonic()
                         res = self.client.post(url, headers={"Authorization": f"Bearer {key}"}, **params)
                     status = str(res.status_code)
@@ -197,17 +215,20 @@ class Services:
                             delay = min(60.0, max(0.0, float(res.headers.get("Retry-After", 0))))
                         except ValueError:
                             pass
-                        if res.status_code == 429:
-                            if any(marker in res.text.lower() for marker in
-                                   ("insufficient credit", "credit balance", "insufficient balance", "out of credit")):
+                        if op != "llm" and res.status_code in {402, 429}:
+                            if res.status_code == 402 or any(marker in res.text.lower() for marker in (
+                                "budget_exceeded", "exceededbudget", "insufficient credit", "credit balance",
+                                "insufficient balance", "prepayment", "out of credit",
+                            )):
                                 with self.lock:
                                     self.exhausted.add(op)
                                 status = "credit_exhausted"
                                 retry = False
                             else:
-                                delay = max(delay, min(45.0, 8.0 * 2 ** (attempt - 1)))
+                                delay = max(delay, 45.0)
                                 with self.lock:
-                                    self.cooldown[op] = monotonic() + delay
+                                    self.throttled.add(op)
+                                    self.cooldown[op] = max(self.cooldown.get(op, 0.0), monotonic() + delay)
                 except (httpx.TransportError, ValueError, TypeError):
                     pass
                 finally:

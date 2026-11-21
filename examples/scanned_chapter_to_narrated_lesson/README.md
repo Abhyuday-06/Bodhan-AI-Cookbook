@@ -38,7 +38,7 @@ docker run --rm --env-file .env -v "$PWD:/work" bodhan-lesson \
 python -m bodhan_lesson --input path/to/scans/ --langs hi,ta,bn --out ./out
 ```
 
-Use a scanned PDF or a flat directory of 5–30 PNG/JPG images. Images sort naturally (`page2` before `page10`). Each PDF page is rasterized by Poppler; the pipeline never requests or reads the document text layer. Smaller inputs are accepted for smoke tests. If the language is ambiguous, use `--source-lang`, e.g. `--source-lang mr`. There is one global API concurrency cap (`--jobs 8` by default), an optional estimated Bodhan spending cap (`--max-inr`), and `--no-cache` for a cold run. Use a dedicated output directory per chapter. A rerun refreshes the report and files that can be regenerated; use the new report's file entries to identify current outputs if a rerun is partial.
+Use a scanned PDF or a flat directory of 5–30 PNG/JPG images. Images sort naturally (`page2` before `page10`). Each PDF page is rasterized by Poppler. Smaller inputs are accepted for smoke tests. If the language is ambiguous, use `--source-lang`, e.g. `--source-lang mr`. There is one global API concurrency cap (`--jobs 8` by default), an optional estimated Bodhan spending cap (`--max-inr`), and `--no-cache` for a cold run. Set `BODHAN_REQUEST_INTERVAL_S` to space hosted requests per Bodhan model. A transient rate limit backs off and enables per-model spacing. Credit exhaustion pauses new calls to the affected model and leaves cached results available. Reuse a dedicated output directory per chapter and use the current `report.json` to identify the files produced by a partial rerun.
 
 `--voices voices.yaml` selects a fixed Indic-Speak voice or voice and style:
 
@@ -103,7 +103,7 @@ python -m bodhan_lesson --input inputs/lines-and-angles.pdf --langs hi,ta,bn --o
 python -m bodhan_lesson --input inputs/equations-ml.pdf --langs hi --out outputs/scert
 ```
 
-**Live demo outputs and video:** pending the hosted run. The [demo checklist](DEMO.md) records the artifacts and checks to capture. Textbook PDFs and generated textbook content are not included in this recipe.
+The full textbook walkthrough requires additional hosted Indic-Speak capacity. The pipeline can resume from cached OCR, translation and checked speech after the allowance is restored. The [demo checklist](DEMO.md) lists the artifacts and checks for the recording. The textbook PDFs and derived lesson content stay in local output folders.
 
 A separate live smoke run used two synthetic pages and Gemini 3.1 Flash-Lite on Vertex AI. All three languages translated and narrated both sections. Maximum accepted section CER was 0.019. The full MP3s measured −16.68 LUFS for Hindi, −16.49 for Tamil, and −16.60 for Bengali. The cached retry run took 80.3 seconds, including Indic-Speak rate-limit backoff.
 

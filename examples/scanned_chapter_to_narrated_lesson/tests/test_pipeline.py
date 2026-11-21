@@ -15,7 +15,7 @@ import pytest
 from bodhan_lesson.__main__ import parse_args
 from bodhan_lesson.audio import cer, speech_chunks
 from bodhan_lesson.chapter import assemble, merge_tables
-from bodhan_lesson.core import Block, KEYS, Page
+from bodhan_lesson.core import Block, KEYS, Page, Services, StageError
 from bodhan_lesson.pipeline import execute
 from bodhan_lesson.scan import column_order, discover, render
 from bodhan_lesson.translate import ESCAPE, signature, translate_markdown
@@ -24,6 +24,29 @@ from bodhan_lesson.translate import ESCAPE, signature, translate_markdown
 class NoJudge:
     def judge(self, *_):
         return None
+
+
+def test_speech_budget_429_preserves_cached_audio_and_other_models(monkeypatch, tmp_path):
+    monkeypatch.setenv(KEYS["speak"], "offline-test-only")
+    monkeypatch.setenv(KEYS["translate"], "offline-test-only")
+    calls = []
+
+    def route(request):
+        calls.append(request.url.path)
+        if request.url.path.endswith("/speech"):
+            if len(calls) == 1:
+                return httpx.Response(200, content=b"RIFFsample")
+            return httpx.Response(429, json={"error": {"type": "budget_exceeded"}})
+        return httpx.Response(200, json={"translation": "परीक्षण"})
+
+    with Services(tmp_path, 1, transport=httpx.MockTransport(route)) as service:
+        assert service.speak("पहला", "hi", "Kavya", {}) == b"RIFFsample"
+        for _ in range(2):
+            with pytest.raises(StageError, match="credit.exhausted"):
+                service.speak("दूसरा", "hi", "Kavya", {})
+        assert service.speak("पहला", "hi", "Kavya", {}) == b"RIFFsample"
+        assert service.translate("test", "hi", "native", {}) == "परीक्षण"
+    assert calls.count("/v1/audio/speech") == 2
 
 
 def make_block(id_, text, page=1, kind="text", box=()):
