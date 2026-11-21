@@ -11,7 +11,7 @@ The harness is engineered around a multi-tier, cost-aware design that executes d
 ```mermaid
 flowchart TD
     Dataset["Dataset (JSONL)\n{id, source, lang, translation, audio, reference}"] --> Orchestrator["Orchestrator\n(Concurrency & Cost Budgeting)"]
-    
+
     subgraph Tier1["Phase 1: Deterministic Checks (Zero API Cost)"]
         ScriptCheck["ScriptCheck\n(Unicode Block Range & Untranslated Runs)"]
         FormatCheck["FormatCheck\n(LaTeX $, $$, braces & Markdown Tables/Fences)"]
@@ -49,7 +49,7 @@ flowchart TD
     Orchestrator --> Tier3
     Tier1 & Tier2 & Tier3 --> Tier4
     Tier4 --> Artifacts
-    
+
     Cache[("Deterministic Disk Cache\n(SHA-256 Keyed)") ] <--> Orchestrator
     CostTracker["CostTracker\n(Budget Cap Enforcement)"] <--> Orchestrator
 ```
@@ -65,19 +65,19 @@ flowchart LR
     GenCheck -- Yes --> GenMissing[Synthesize missing translations & audio]
     GenCheck -- No --> Phase1[Phase 1: Deterministic Checks]
     GenMissing --> Phase1
-    
+
     Phase1 --> Phase2Check{Translate API Key & Budget?}
     Phase2Check -- Yes --> Phase2[Phase 2: Back-Translation Check]
     Phase2Check -- No (or Budget Hit) --> Phase3Check
-    
+
     Phase2 --> Phase3Check{Audio exists & Transcribe Key?}
     Phase3Check -- Yes --> Phase3[Phase 3: Back-Transcription Check]
     Phase3Check -- No --> Phase4Check
-    
+
     Phase3 --> Phase4Check{LLM Key configured?}
     Phase4Check -- Yes --> Phase4[Phase 4: Calibrated LLM Judge]
     Phase4Check -- No --> CalibCheck
-    
+
     Phase4 --> CalibCheck{--calibration provided?}
     CalibCheck -- Yes --> Calibrate[Tune Thresholds & Re-filter Flags]
     CalibCheck -- No --> GenReports[Generate Reports]
@@ -119,7 +119,7 @@ The harness audits all 10 defect categories specified in the Bodhan rubric:
    - The error injector generates test cases strictly through programmatic character/span deletions, digit mutations, format modifications, and audio signal alterations.
 4. **Deterministic & Cached:**
    - Every API request is cached to disk keyed by a SHA-256 hash of its exact inputs and hyperparameters.
-   - Repeated runs against a cached dataset incur **₹0.00** in model cost and produce identical reports.
+   - Repeating the live benchmark from a populated cache produced identical per-item results at ₹0.00 in new model cost. Run metadata records the new timing and cost.
 
 ---
 
@@ -213,7 +213,10 @@ When `--calibration` is supplied, the harness sweeps confidence thresholds from 
 
 ## Output Artifacts & Sample Report
 
-A pre-computed sample evaluation report generated on the 120-item demo dataset is available in [`sample_report/`](sample_report/):
+The hosted run evaluated all 120 items, with 40 each in Hindi, Tamil and Bengali. Gemini 3.1 Flash-Lite on Vertex AI judged translation quality. Bodhan Indic-Translate provided back-translations. An earlier pass encountered two temporary provider limits, and the cache-backed continuation recovered both checks. This continuation took 6.6 seconds and added ₹0.0005 in Bodhan usage. The subsequent cached repeat took 0.3 seconds and used zero new model calls.
+
+The live reports are available in [`sample_report/`](sample_report/).
+
 - **Executive Summary:** [`sample_report/summary.md`](sample_report/summary.md)
 - **Structured Metrics JSON:** [`sample_report/summary.json`](sample_report/summary.json)
 - **Per-item Flags with Spans:** [`sample_report/items.jsonl`](sample_report/items.jsonl)
@@ -235,13 +238,21 @@ report/
 
 | Metric | Target | Result on Demo Dataset | Status |
 |---|---|---|---|
-| **Detection Recall** | $\ge 80\%$ | $85.7\%$ (on seeded errors) | **PASS** |
+| **Detection Recall** | $\ge 80\%$ | $96.5\%$ (on seeded errors) | **PASS** |
 | **False Alarms** | $\le 10\%$ | $0.0\%$ (on clean items) | **PASS** |
-| **Localization Overlap** | $\ge 70\%$ | $100.0\%$ | **PASS** |
-| **Category Accuracy** | $\ge 70\%$ | $100.0\%$ | **PASS** |
-| **Judge Consistency** | $\ge 90\%$ | $100.0\%$ (temperature=0.0) | **PASS** |
+| **Localization Overlap** | $\ge 70\%$ | $79.3\%$ | **PASS** |
+| **Category Accuracy** | $\ge 70\%$ | $96.5\%$ | **PASS** |
+| **Judge Consistency** | $\ge 90\%$ | Cached outputs repeat exactly. Fresh duplicate calls were unmeasured. | Unmeasured |
 | **Determinism** | 100% at ₹0 cost | Identical on cached rerun | **PASS** |
-| **Runtime** | < 30 mins for 200 items | < 0.5s local / < 4 mins API | **PASS** |
+| **Runtime** | < 30 mins for 200 items | Earlier 120-item paced pass 938.9 s. Cached continuation 6.6 s. | 200-item cold run unmeasured |
+
+Calibration measured 43.8% precision and 60.2% F1 for individual error spans and categories, even though the clean-item false alarm rate was 0%. Several flagged defect items had additional or overlapping flags. The labelled set measures translation defects. Speech metrics below cover a separate three-item run.
+
+## Demo video
+
+The 1:25 walkthrough replays the full benchmark and shows the report, cached repeat and three AI-generated speech verification examples. [Walkthrough](https://github.com/Abhyuday-06/Bodhan-AI-Cookbook/releases/download/quality-harness-takehome-demo/quality-harness-demo.mp4)
+
+The evidence archive contains the full live report, baseline diff, three verified speech samples and their reports. [Evidence archive](https://github.com/Abhyuday-06/Bodhan-AI-Cookbook/releases/download/quality-harness-takehome-demo/quality-harness-evidence.zip)
 
 ---
 
@@ -258,4 +269,4 @@ pytest tests/ -v
 
 ## Author & License
 
-Authored by **Abhyuday** for the Bodhan AI Take-Home Assignment. Distributed under the MIT License.
+Authored by **Abhyuday Vaish** for the Bodhan AI Take-Home Assignment. Distributed under the MIT License. Codex assisted with integration fixes, tests, live validation and the walkthrough.

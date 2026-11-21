@@ -1,0 +1,11 @@
+.env
+.env.*
+.git
+.venv*
+.pytest_cache
+.ruff_cache
+.bodhan_cache
+outputs
+report
+previous_report
+**/__pycache__

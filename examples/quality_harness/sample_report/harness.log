@@ -1,12 +1,11 @@
-18:15:16 [INFO] bodhan_eval.orchestrator: Starting Bodhan Quality Evaluation Harness on data/demo.jsonl
-18:15:16 [WARNING] bodhan_eval.config: No credentials configured for TRANSLATE. Associated model checks will be gracefully skipped or simulated.
-18:15:16 [WARNING] bodhan_eval.config: No credentials configured for SPEAK. Associated model checks will be gracefully skipped or simulated.
-18:15:16 [WARNING] bodhan_eval.config: No credentials configured for TRANSCRIBE. Associated model checks will be gracefully skipped or simulated.
-18:15:16 [WARNING] bodhan_eval.config: No credentials configured for LLM. Associated model checks will be gracefully skipped or simulated.
-18:15:16 [INFO] bodhan_eval.dataset: Loaded 120 items from demo.jsonl (skipped 0 invalid).
-18:15:16 [INFO] bodhan_eval.orchestrator: Loaded 120 items matching target languages: ['hi', 'ta', 'bn']
-18:15:16 [INFO] bodhan_eval.orchestrator: Executing evaluation checks across items...
-18:15:16 [INFO] bodhan_eval.orchestrator: Calibrating harness against ground truth: data/calibration_labels.jsonl
-18:15:16 [INFO] bodhan_eval.orchestrator: Calibration complete: Precision=0.86, Recall=0.60, F1=0.71
-18:15:16 [INFO] bodhan_eval.orchestrator: Writing evaluation artifacts to E:\Programming\Bodhan.ai_assignment\Bodhan-AI-Cookbook\examples\quality_harness\sample_report...
-18:15:16 [INFO] bodhan_eval.orchestrator: Evaluation finished in 0.0s. Spend: ₹0.0000 / ₹50.00. Cache hit rate: 0.0%.
+09:29:52 [INFO] bodhan_eval.orchestrator: Starting Bodhan Quality Evaluation Harness on data/demo.jsonl
+09:29:52 [INFO] bodhan_eval.dataset: Loaded 120 items from demo.jsonl (skipped 0 invalid).
+09:29:52 [INFO] bodhan_eval.orchestrator: Loaded 120 items matching target languages: ['hi', 'ta', 'bn']
+09:29:52 [INFO] bodhan_eval.orchestrator: Executing evaluation checks across items...
+09:29:54 [INFO] httpx: HTTP Request: POST https://api.bodhan.ai/translate "HTTP/1.1 404 Not Found"
+09:29:55 [INFO] httpx: HTTP Request: POST https://api.bodhan.ai/v1/chat/completions "HTTP/1.1 200 OK"
+09:29:59 [INFO] httpx: HTTP Request: POST https://api.bodhan.ai/v1/chat/completions "HTTP/1.1 200 OK"
+09:29:59 [INFO] bodhan_eval.orchestrator: Calibrating harness against ground truth: data/calibration_labels.jsonl
+09:29:59 [INFO] bodhan_eval.orchestrator: Calibration complete: Precision=0.44, Recall=0.97, F1=0.60
+09:29:59 [INFO] bodhan_eval.orchestrator: Writing evaluation artifacts to <recipe>\outputs\vertex-final...
+09:29:59 [INFO] bodhan_eval.orchestrator: Evaluation finished in 6.6s. Spend: ₹0.0005 / ₹4.00. Cache hit rate: 99.2%.

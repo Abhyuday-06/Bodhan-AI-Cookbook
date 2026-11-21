@@ -9,13 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Install dependencies
-COPY requirements.txt .
-COPY pyproject.toml .
+COPY requirements.txt pyproject.toml README.md ./
 RUN pip install --no-cache-dir -r requirements.txt
+COPY src ./src
 RUN pip install --no-cache-dir -e ".[dev]"
 
-# Copy source and data
-COPY . .
+COPY data ./data
+COPY tests ./tests
 
 # Run harness
 ENTRYPOINT ["python", "-m", "bodhan_eval"]
