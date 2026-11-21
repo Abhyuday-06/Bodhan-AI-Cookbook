@@ -14,7 +14,7 @@ from .audio import chapter_track, slug, synth_section
 from .chapter import HEADS, SOURCE_SCRIPTS, assemble, body_text
 from .core import (ALL_VOICES, VOICE_PAIRS, Block, Page, Services, StageError,
                    context, json_file, log, public_error, text_file)
-from .narrate import script_section
+from .narrate import brief_script, script_section
 from .scan import HEADING_PREFIX, discover, process_page
 from .translate import seed_glossary, signature, translate_block
 
@@ -69,7 +69,7 @@ def error_section(section, exc):
             "markdown": "", "wav": None, "script": [], "translation": [], "narration": {"status": "failed"}}
 
 
-def run_section(svc, section, src, lang, glossary, voice, style, mixed, dest, work):
+def run_section(svc, section, src, lang, glossary, voice, style, mixed, brief, dest, work):
     started = monotonic()
     log("section_start", language=lang, section=section.index)
     translated, written, checks = [], [], []
@@ -91,7 +91,18 @@ def run_section(svc, section, src, lang, glossary, voice, style, mixed, dest, wo
                                  "<!-- Translation unavailable: " + ", ".join(block.ids) + " -->",
                                  asset=block.asset))
         checks.append(check)
-    items, diagnostics = script_section(svc, section.blocks, translated, src, lang, glossary, section.index, mixed)
+    shortened = False
+    if brief:
+        items, diagnostics = brief_script(svc, section.blocks, translated, src, lang, glossary, section.index, mixed)
+        planned_blocks = {id_ for block in translated if block.kind != "code" for id_ in block.ids}
+        translated_chars = sum(len(block.text) for block in translated if block.kind != "code")
+        spoken_chars = sum(len(item["text"]) for item in items)
+        shortened = spoken_chars < translated_chars
+        diagnostics.append({"policy": "brief_narration", "translated_chars": translated_chars,
+                            "selected_chars": spoken_chars, "reason": "short excerpt selected for synthesis"})
+    else:
+        items, diagnostics = script_section(svc, section.blocks, translated, src, lang, glossary, section.index, mixed)
+        planned_blocks = {id_ for item in items for id_ in item["source_blocks"]}
     title = next((HEADING_PREFIX.sub("", b.text) for b in translated if b.text and b.kind in HEADS),
                  f"{section.index:02d}")
     file = dest / "narration" / f"{section.index:02d}-{slug(title, section.index)}.{lang}.mp3"
@@ -101,7 +112,8 @@ def run_section(svc, section, src, lang, glossary, voice, style, mixed, dest, wo
     except StageError as exc:
         audio = {"status": "failed", "error": public_error(exc), "file": None, "duration_s": None, "cer": None}
     covered_ids = {id_ for item in items for id_ in item["source_blocks"]}
-    missing = [{"blocks": list(b.ids), "reason": "translation_or_script_unavailable"} for b in section.blocks
+    missing = [{"blocks": list(b.ids), "reason": "omitted_in_brief_narration" if set(b.ids) <= planned_blocks
+                else "translation_or_script_unavailable"} for b in section.blocks
                if not set(b.ids) <= covered_ids and b.kind != "code" and (b.text or b.asset)]
     manifest = []
     line = 1
@@ -110,7 +122,7 @@ def run_section(svc, section, src, lang, glossary, voice, style, mixed, dest, wo
         if b.text or b.asset:
             manifest.append({"source_blocks": list(b.ids), "kind": b.kind, "line_start": line, "line_end": line + span - 1})
             line += span + 1
-    status = "ok" if audio["status"] == "ok" and all(c["status"] == "ok" for c in checks) and not missing else "partial"
+    status = "ok" if audio["status"] == "ok" and all(c["status"] == "ok" for c in checks) and not (missing or shortened) else "partial"
     if not audio.get("file") and not translated:
         status = "failed"
     report = {"section": section.index, "source_title": section.title, "title": title,
@@ -122,7 +134,7 @@ def run_section(svc, section, src, lang, glossary, voice, style, mixed, dest, wo
     return {**report, "markdown": body_text(written, "../source/").strip(), "wav": wav if audio.get("file") else None}
 
 
-def run_language(svc, sections, src, lang, glossary, voice, style, mixed, out, jobs):
+def run_language(svc, sections, src, lang, glossary, voice, style, mixed, brief, out, jobs):
     started = monotonic()
     dest = out / lang
     dest.mkdir(parents=True, exist_ok=True)
@@ -133,7 +145,7 @@ def run_language(svc, sections, src, lang, glossary, voice, style, mixed, out, j
         result = {}
         with ThreadPoolExecutor(max_workers=min(jobs, 4)) as pool:
             tasks = {pool.submit(run_section, svc, section, src, lang, glossary, voice, style,
-                                 mixed, dest, work): section for section in sections}
+                                 mixed, brief, dest, work): section for section in sections}
             for task in as_completed(tasks):
                 section = tasks[task]
                 try:
@@ -203,6 +215,7 @@ def execute(args, transport=None):
             if not svc.keys["ocr"]:
                 raise StageError("missing BODHAN_OCR_KEY")
             report["configuration"] = {"api_concurrency": args.jobs, "code_mixed": args.code_mixed,
+                                       "narration_mode": "brief" if args.brief_narration else "full",
                                        "llm_model": svc.llm_model or None, "ocr_crop_limit": args.ocr_repair_limit}
             by_page = {}
             with ThreadPoolExecutor(max_workers=args.jobs) as pool:
@@ -229,7 +242,7 @@ def execute(args, transport=None):
             report["glossary"] = glossary_qa
             with ThreadPoolExecutor(max_workers=min(len(langs), args.jobs)) as pool:
                 pending = {pool.submit(run_language, svc, sections, src, lang, glossary, *voices[lang],
-                                       args.code_mixed, out, args.jobs): lang for lang in langs}
+                                       args.code_mixed, args.brief_narration, out, args.jobs): lang for lang in langs}
                 for task in as_completed(pending):
                     lang = pending[task]
                     try:

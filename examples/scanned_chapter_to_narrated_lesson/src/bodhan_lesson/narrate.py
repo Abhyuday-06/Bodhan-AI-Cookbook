@@ -6,6 +6,7 @@ import html
 import re
 import unicodedata
 
+from .audio import brief_section_script
 from .chapter import HEADS
 from .core import StageError, context, public_error
 from .translate import MATH, NUMBER, check_script, translate_block, translate_markdown
@@ -284,3 +285,26 @@ def script_section(svc, sources, translated, source, language, glossary, sec, mi
     narrated_with_figure = {id_ for item in result if item["policy"].startswith("figure_")
                             for id_ in item["source_blocks"][1:]}
     return [item for item in result if item["source_blocks"][0] not in narrated_with_figure], diagnostics
+
+
+def brief_script(svc, sources, translated, source, language, glossary, sec, mixed):
+    """Plan a single excerpt before spending calls on unselected structural readings."""
+    candidates = [
+        {"text": " ".join(plain_md(block.text).split()), "source_blocks": list(block.ids),
+         "policy": "heading" if block.kind in HEADS else "read_prose"}
+        for block in translated
+        if block.kind not in {"equation", "table", "figure", "code"} and not MATH.search(block.text)
+    ]
+    selected = brief_section_script(candidates) if not mixed else []
+    if selected:
+        return selected, []
+    diagnostics = []
+    for block in translated:
+        if block.kind == "code":
+            continue
+        items, notes = script_section(svc, sources, [block], source, language, glossary, sec, mixed)
+        diagnostics.extend(notes)
+        selected = brief_section_script(items)
+        if selected:
+            return selected, diagnostics
+    return [], diagnostics

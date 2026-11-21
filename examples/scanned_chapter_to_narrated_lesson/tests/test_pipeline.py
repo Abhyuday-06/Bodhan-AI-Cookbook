@@ -13,7 +13,7 @@ from PIL import Image
 import pytest
 
 from bodhan_lesson.__main__ import parse_args
-from bodhan_lesson.audio import cer, join_short_prose, speech_chunks, verified_clip
+from bodhan_lesson.audio import brief_section_script, cer, join_short_prose, speech_chunks, verified_clip
 from bodhan_lesson.chapter import assemble, merge_tables
 from bodhan_lesson.core import Block, KEYS, Page, ProviderCreditExhausted, Services
 from bodhan_lesson.pipeline import execute
@@ -24,6 +24,18 @@ from bodhan_lesson.translate import ESCAPE, signature, translate_markdown
 class NoJudge:
     def judge(self, *_):
         return None
+
+
+def test_brief_narration_keeps_an_intact_statement_and_its_source():
+    items = [
+        {"text": "Section heading", "source_blocks": ["b1"], "policy": "heading"},
+        {"text": "A straight angle measures 180 degrees. It can be split into two angles.",
+         "source_blocks": ["b2"], "policy": "read_prose"},
+    ]
+    assert brief_section_script(items) == [
+        {"text": "A straight angle measures 180 degrees.", "source_blocks": ["b2"], "policy": "read_prose"},
+    ]
+    assert items[1]["text"].endswith("two angles.")
 
 
 def test_short_prose_groups_keep_block_provenance_and_structural_boundaries():

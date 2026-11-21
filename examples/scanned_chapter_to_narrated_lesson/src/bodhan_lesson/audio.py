@@ -230,6 +230,19 @@ def join_short_prose(items, limit=210):
     return grouped
 
 
+def brief_section_script(items, preferred_chars=140):
+    """Select one short, intact statement from already translated material."""
+    candidates = []
+    for index, item in enumerate(items):
+        statement = re.split(r"(?<!\d\.)(?<=[.!?।॥؟。])\s+", item["text"].strip(), maxsplit=1)[0]
+        if len(statement) > 210 or not any(letter.isalpha() for letter in statement):
+            continue
+        policy = item["policy"]
+        rank = (len(statement) > preferred_chars, policy == "heading", index)
+        candidates.append((rank, {**item, "text": statement}))
+    return [min(candidates, key=lambda candidate: candidate[0])[1]] if candidates else []
+
+
 def synth_section(svc, items, language, voice, style, section, file, wav_file):
     attempts, included, failed, raw_frames = [], [], [], []
     text_offset = 0.0

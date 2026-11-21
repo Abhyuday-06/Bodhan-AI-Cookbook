@@ -93,6 +93,8 @@ out/
 
 A failed page or language does not prevent other pages and languages from finishing. Exit code `1` means the run failed or has incomplete artifacts; read `report.json`. Each section records the source block IDs, Markdown line spans, language and structure checks, narration coverage, selected ASR, CER, retries and measured loudness. Doubtful text is excluded from translation and speech. Cached responses may contain source text and audio; treat the output and cache as local data. Every narration is AI-generated; MP3 metadata and JSON indicate this.
 
+Use `--brief-narration` to spend fewer speech credits. It selects one short, intact statement from the verified narration script for each section. The pipeline still writes the translated Markdown, records which text the narration omitted, and labels intentionally shortened coverage in the report.
+
 ### Demonstrations
 
 The `scripts/prepare_demo.py` helper downloads the [required NCERT Lines and Angles chapter](https://www.aspirationsinstitute.com/wp-content/uploads/2021/01/9-Maths-NCERT-Book-Lines-and-Angles.pdf) and extracts pages 33–44 (Chapter 2, *Equations*) from [SCERT Kerala Class 8 Mathematics, Malayalam medium](https://scert.kerala.gov.in/wp-content/uploads/2018/04/8_m_maths_part1.pdf). It keeps both PDFs in ignored `inputs/`. The first chapter exercises geometric notation and repeated footers; the second exercises Malayalam source detection, the English pivot, sidebars, math and tables.

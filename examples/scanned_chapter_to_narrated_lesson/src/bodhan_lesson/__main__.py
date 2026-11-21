@@ -32,6 +32,8 @@ def parse_args(argv=None):
     p.add_argument("--glossary", type=Path, help="optional YAML term-to-language mapping")
     p.add_argument("--voices", type=Path, help="optional YAML language-to-voice mapping")
     p.add_argument("--code-mixed", action="store_true", help="Bodhan code-mixed narration, native Markdown")
+    p.add_argument("--brief-narration", action="store_true",
+                   help="speak one short excerpt per section and preserve translated Markdown")
     p.add_argument("--jobs", type=bounded(1, 16), default=8, help="max simultaneous API requests (default: 8)")
     p.add_argument("--dpi", type=bounded(100, 350), default=205, help="PDF rasterization DPI (default: 205)")
     p.add_argument("--ocr-repair-limit", type=bounded(0, 12), default=4, help="max block crops per page (default: 4)")
