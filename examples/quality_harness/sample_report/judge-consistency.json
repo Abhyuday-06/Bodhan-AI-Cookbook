@@ -1,0 +1,102 @@
+{
+  "model": "google/gemini-3.1-flash-lite",
+  "seed": 42,
+  "items": 18,
+  "calls_per_item": 2,
+  "identical_category_lists": 18,
+  "unavailable": 0,
+  "agreement_rate": 1.0,
+  "elapsed_seconds": 15.61,
+  "results": [
+    {
+      "id": "hi-004",
+      "language": "hi",
+      "agreement": 1.0
+    },
+    {
+      "id": "hi-001",
+      "language": "hi",
+      "agreement": 1.0
+    },
+    {
+      "id": "hi-009",
+      "language": "hi",
+      "agreement": 1.0
+    },
+    {
+      "id": "hi-028",
+      "language": "hi",
+      "agreement": 1.0
+    },
+    {
+      "id": "hi-040",
+      "language": "hi",
+      "agreement": 1.0
+    },
+    {
+      "id": "hi-025",
+      "language": "hi",
+      "agreement": 1.0
+    },
+    {
+      "id": "ta-004",
+      "language": "ta",
+      "agreement": 1.0
+    },
+    {
+      "id": "ta-018",
+      "language": "ta",
+      "agreement": 1.0
+    },
+    {
+      "id": "ta-003",
+      "language": "ta",
+      "agreement": 1.0
+    },
+    {
+      "id": "ta-039",
+      "language": "ta",
+      "agreement": 1.0
+    },
+    {
+      "id": "ta-034",
+      "language": "ta",
+      "agreement": 1.0
+    },
+    {
+      "id": "ta-022",
+      "language": "ta",
+      "agreement": 1.0
+    },
+    {
+      "id": "bn-001",
+      "language": "bn",
+      "agreement": 1.0
+    },
+    {
+      "id": "bn-003",
+      "language": "bn",
+      "agreement": 1.0
+    },
+    {
+      "id": "bn-007",
+      "language": "bn",
+      "agreement": 1.0
+    },
+    {
+      "id": "bn-028",
+      "language": "bn",
+      "agreement": 1.0
+    },
+    {
+      "id": "bn-037",
+      "language": "bn",
+      "agreement": 1.0
+    },
+    {
+      "id": "bn-021",
+      "language": "bn",
+      "agreement": 1.0
+    }
+  ]
+}

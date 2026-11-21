@@ -69,6 +69,8 @@ class LLMJudgeClient:
         system_prompt: str,
         user_prompt: str,
         temperature: float = 0.0,
+        *,
+        use_cache: bool = True,
     ) -> dict[str, Any] | None:
         """
         Query the LLM judge and return structured JSON assessment.
@@ -77,7 +79,7 @@ class LLMJudgeClient:
         # 1. Check cache first
         cache_params = {"model": self.model, "temp": temperature}
         combined_prompt = f"SYS:\n{system_prompt}\n\nUSER:\n{user_prompt}"
-        if self.cache:
+        if use_cache and self.cache:
             cached = self.cache.get_json("llm-judge", combined_prompt, **cache_params)
             if cached is not None:
                 logger.debug("Cache hit for LLM Judge verdict")
@@ -124,7 +126,7 @@ class LLMJudgeClient:
         parsed = self._extract_json(content)
 
         # 3. Cache valid structured verdict
-        if parsed is not None and self.cache:
+        if parsed is not None and use_cache and self.cache:
             self.cache.set_json("llm-judge", combined_prompt, parsed, **cache_params)
 
         return parsed

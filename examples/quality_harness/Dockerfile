@@ -16,6 +16,8 @@ RUN pip install --no-cache-dir -e ".[dev]"
 
 COPY data ./data
 COPY tests ./tests
+COPY scripts ./scripts
+COPY sample_report ./sample_report
 
 # Run harness
 ENTRYPOINT ["python", "-m", "bodhan_eval"]

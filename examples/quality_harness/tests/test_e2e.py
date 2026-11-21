@@ -6,10 +6,34 @@ import json
 import tempfile
 from pathlib import Path
 
+import httpx
 import pytest
 
+from bodhan_eval.api.llm import LLMJudgeClient
+from bodhan_eval.cache import DiskCache
 from bodhan_eval.config import Config
+from bodhan_eval.judge.judge import JudgeOrchestrator
 from bodhan_eval.orchestrator import Orchestrator
+from bodhan_eval.types import DatasetItem
+
+
+@pytest.mark.asyncio
+async def test_judge_consistency_uses_fresh_verdicts(monkeypatch, tmp_path):
+    categories = iter(("number", "format"))
+    requests = []
+
+    def route(request):
+        requests.append(request)
+        verdict = json.dumps({"errors": [{"category": next(categories)}]})
+        return httpx.Response(200, json={"choices": [{"message": {"content": verdict}}]})
+
+    create_client = httpx.AsyncClient
+    transport = httpx.MockTransport(route)
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kw: create_client(transport=transport, **kw))
+    judge = JudgeOrchestrator(LLMJudgeClient(api_key="offline-test-only", cache=DiskCache(tmp_path)))
+    item = DatasetItem(id="consistency", source="One apple.", lang="hi")
+    assert await judge.measure_consistency(item, "एक सेब।", n_runs=2) == 0.5
+    assert len(requests) == 2
 
 
 @pytest.mark.asyncio

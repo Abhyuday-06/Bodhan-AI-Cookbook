@@ -242,11 +242,13 @@ report/
 | **False Alarms** | $\le 10\%$ | $0.0\%$ (on clean items) | **PASS** |
 | **Localization Overlap** | $\ge 70\%$ | $79.3\%$ | **PASS** |
 | **Category Accuracy** | $\ge 70\%$ | $96.5\%$ | **PASS** |
-| **Judge Consistency** | $\ge 90\%$ | Cached outputs repeat exactly. Fresh duplicate calls were unmeasured. | Unmeasured |
+| **Judge Consistency** | $\ge 90\%$ | 18 of 18 pairs agreed on the full category list across two uncached requests per item. | **PASS** |
 | **Determinism** | 100% at ₹0 cost | Identical on cached rerun | **PASS** |
 | **Runtime** | < 30 mins for 200 items | Earlier 120-item paced pass 938.9 s. Cached continuation 6.6 s. | 200-item cold run unmeasured |
 
-Calibration measured 43.8% precision and 60.2% F1 for individual error spans and categories, even though the clean-item false alarm rate was 0%. Several flagged defect items had additional or overlapping flags. The labelled set measures translation defects. Speech metrics below cover a separate three-item run.
+Calibration measured 43.8% precision and 60.2% F1 for individual error spans and categories. The clean-item false alarm rate was 0%. Several flagged defect items had additional or overlapping flags. The labelled set measures translation defects. Speech metrics below cover a separate three-item run.
+
+The consistency sample used three clean and three seeded items per language, selected with seed 42. Each pair received the same inputs and pre-check findings. Run `python scripts/measure_judge_consistency.py --out outputs/judge-consistency.json` to repeat the measurement. [Recorded agreement results](sample_report/judge-consistency.json)
 
 ## Demo video
 

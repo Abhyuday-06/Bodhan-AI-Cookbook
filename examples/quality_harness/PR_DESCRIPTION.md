@@ -31,7 +31,7 @@ The [execution flow](README.md#execution-flow--cost-gating) shows which checks r
 
 ## Where the LLM is used, and why
 
-The judge examines existing translations, back-translations and deterministic findings and returns structured categories, spans and explanations. The demo used Gemini 3.1 Flash-Lite on Vertex AI. Calibration compares flagged spans and categories with the committed labelled set. The cached rerun produced identical item records.
+The judge examines existing translations, back-translations and deterministic findings and returns structured categories, spans and explanations. The demo used Gemini 3.1 Flash-Lite on Vertex AI. Calibration compares flagged spans and categories with the labelled set. The cached rerun produced identical item records. In a separate check, all 18 pairs of uncached requests agreed on the category list. [Consistency report](sample_report/judge-consistency.json)
 
 ## Bodhan models used
 
@@ -47,7 +47,7 @@ The 1:25 replay shows the benchmark invocation, its report, the cached compariso
 
 ## Trade-offs and known limitations
 
-Several seeded items produced extra or overlapping flags, which lowered span-level precision. The main dataset measures translation quality. The separate three-item speech check verifies the live audio path. Performance on a fresh 200-item run and consistency between uncached judge calls remain unmeasured.
+Several seeded items produced extra or overlapping flags, which lowered span-level precision. The main dataset measures translation quality. The separate three-item speech check verifies the live audio path. The consistency result covers an 18-item sample. Performance on a fresh 200-item audio run remains unmeasured.
 
 ## Cost and runtime
 

@@ -101,26 +101,33 @@ class JudgeOrchestrator:
         item: DatasetItem,
         translation: str,
         n_runs: int = 3,
-    ) -> float:
+        *,
+        prior_checks: list[CheckResult] | None = None,
+    ) -> float | None:
         """
         Evaluate judge consistency across n separate runs on the same item.
         Target: >= 90% category agreement.
         """
+        if n_runs < 2:
+            raise ValueError("Consistency requires at least two judge runs")
         if not self.llm_client or not self.llm_client.api_key:
-            return 1.0
+            return None
 
-        user_prompt = build_judge_prompt(item.source, translation, item.lang)
+        user_prompt = build_judge_prompt(item.source, translation, item.lang, prior_checks)
         verdicts = []
         for _ in range(n_runs):
             res = await self.llm_client.judge(
                 system_prompt=JUDGE_SYSTEM_PROMPT,
                 user_prompt=user_prompt,
                 temperature=0.0,
+                use_cache=False,
             )
-            categories = sorted([
-                e.get("category") for e in (res.get("errors", []) if res else [])
-            ])
-            verdicts.append(tuple(categories))
+            errors = res.get("errors") if isinstance(res, dict) else None
+            if not isinstance(errors, list) or any(
+                not isinstance(error, dict) or not isinstance(error.get("category"), str) for error in errors
+            ):
+                return None
+            verdicts.append(tuple(sorted(error["category"] for error in errors)))
 
         # Check fraction of runs agreeing with majority verdict
         majority_count = max(verdicts.count(v) for v in verdicts)
