@@ -13,9 +13,9 @@ from PIL import Image
 import pytest
 
 from bodhan_lesson.__main__ import parse_args
-from bodhan_lesson.audio import cer, join_short_prose, speech_chunks
+from bodhan_lesson.audio import cer, join_short_prose, speech_chunks, verified_clip
 from bodhan_lesson.chapter import assemble, merge_tables
-from bodhan_lesson.core import Block, KEYS, Page, Services, StageError
+from bodhan_lesson.core import Block, KEYS, Page, ProviderCreditExhausted, Services
 from bodhan_lesson.pipeline import execute
 from bodhan_lesson.scan import column_order, discover, render
 from bodhan_lesson.translate import ESCAPE, signature, translate_markdown
@@ -55,8 +55,12 @@ def test_speech_budget_429_preserves_cached_audio_and_other_models(monkeypatch, 
     with Services(tmp_path, 1, transport=httpx.MockTransport(route)) as service:
         assert service.speak("पहला", "hi", "Kavya", {}) == b"RIFFsample"
         for _ in range(2):
-            with pytest.raises(StageError, match="credit.exhausted"):
+            with pytest.raises(ProviderCreditExhausted, match="credit exhausted"):
                 service.speak("दूसरा", "hi", "Kavya", {})
+        attempts = []
+        with pytest.raises(ProviderCreditExhausted):
+            verified_clip(service, "दूसरा", "hi", "Kavya", None, {}, attempts)
+        assert len(attempts) == 1
         assert service.speak("पहला", "hi", "Kavya", {}) == b"RIFFsample"
         assert service.translate("test", "hi", "native", {}) == "परीक्षण"
     assert calls.count("/v1/audio/speech") == 2

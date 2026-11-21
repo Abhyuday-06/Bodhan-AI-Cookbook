@@ -35,6 +35,10 @@ class StageError(RuntimeError):
     """An expected error with text safe to put in the report."""
 
 
+class ProviderCreditExhausted(StageError):
+    """The provider's available credit for this model has been exhausted."""
+
+
 @dataclass
 class Block:
     ids: tuple[str, ...]
@@ -169,7 +173,7 @@ class Services:
             for attempt in range(1, 5):
                 with self.lock:
                     if op in self.exhausted:
-                        raise StageError("provider Bodhan credit exhausted")
+                        raise ProviderCreditExhausted("provider Bodhan credit exhausted")
                     if self.budget is not None and self.projected_inr + estimate > self.budget + 1e-8:
                         raise StageError("estimated Bodhan budget reached")
                     self.projected_inr += estimate
@@ -237,6 +241,8 @@ class Services:
                         self.projected_inr += cost - estimate
                 self.record(op, ctx, attempt, status, monotonic() - started,
                             cost_inr=0.0, billing="unknown_on_failure")
+                if status == "credit_exhausted":
+                    raise ProviderCreditExhausted("provider Bodhan credit exhausted")
                 if not retry or attempt == 4:
                     raise StageError(f"{op} request failed ({status})")
                 sleep(max(delay, 0.45 * 2 ** (attempt - 1) + random.random() * 0.25))

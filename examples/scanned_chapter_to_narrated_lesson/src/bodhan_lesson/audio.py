@@ -13,7 +13,7 @@ import wave
 
 from rapidfuzz.distance import Levenshtein
 
-from .core import StageError, atomic, context, json_file, public_error
+from .core import ProviderCreditExhausted, StageError, atomic, context, json_file, public_error
 
 
 def wav_info(data):
@@ -155,7 +155,8 @@ def verified_clip(svc, input_text, language, voice, style, ctx, attempts, depth=
                 best = clip
         except StageError as exc:
             info.update(status="failed", reason=public_error(exc))
-            if "key" in str(exc) or "(401)" in str(exc) or "(403)" in str(exc) or "budget" in str(exc):
+            if (isinstance(exc, ProviderCreditExhausted) or "key" in str(exc) or "(401)" in str(exc)
+                    or "(403)" in str(exc) or "budget" in str(exc)):
                 raise
     if depth < 2 and len(input_text) >= 38:
         splits = [m.start() for m in re.finditer(r"\s+", input_text)]
