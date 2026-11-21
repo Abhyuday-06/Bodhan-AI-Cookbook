@@ -122,7 +122,7 @@ class Services:
             raise StageError("BODHAN_REQUEST_INTERVAL_S must be a number") from exc
         if not isfinite(self.request_interval) or self.request_interval < 0:
             raise StageError("BODHAN_REQUEST_INTERVAL_S must be finite and nonnegative")
-        self.throttled = set()
+        self.throttled_until = {}
         self.exhausted = set()
         self.speech_gate = BoundedSemaphore(1)
 
@@ -147,7 +147,7 @@ class Services:
                 now = monotonic()
                 wait = self.cooldown.get(op, 0.0) - now
                 if wait <= 0:
-                    interval = max(self.request_interval, 6.2 if op in self.throttled else 0.0)
+                    interval = max(self.request_interval, 6.2 if now < self.throttled_until.get(op, 0.) else 0.)
                     self.cooldown[op] = now + interval
                     return
             sleep(wait)
@@ -227,8 +227,9 @@ class Services:
                             else:
                                 delay = max(delay, 45.0)
                                 with self.lock:
-                                    self.throttled.add(op)
-                                    self.cooldown[op] = max(self.cooldown.get(op, 0.0), monotonic() + delay)
+                                    resume = monotonic() + delay
+                                    self.cooldown[op] = max(self.cooldown.get(op, 0.0), resume)
+                                    self.throttled_until[op] = resume + 45.
                 except (httpx.TransportError, ValueError, TypeError):
                     pass
                 finally:
