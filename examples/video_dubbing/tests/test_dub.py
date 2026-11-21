@@ -1,11 +1,12 @@
 """Verify the timestamp logic and one real FFmpeg round trip."""
 import json
+import shutil
 
 import httpx
 import numpy as np
 import pytest
 from bodhan_dub import __main__ as cli
-from bodhan_dub.media import MIX_RATE, ffmpeg, fit_speed, probe, speech_spans, wave_bytes
+from bodhan_dub.media import MIX_RATE, ffmpeg, fit_speed, mix_track, probe, speech_spans, wave_bytes
 from bodhan_dub.providers import KEY_NAMES, DubError, Providers
 from bodhan_dub.workflow import english_numerals, numbers, phonetic_quality, translate_segment
 
@@ -34,6 +35,19 @@ def test_spoken_english_numbers_can_be_compared_with_indic_digits():
     source = "Period one, chapter six. An angle is ninety or one eighty degrees."
     translated_numerals = "१ ६ ९० १८०"
     assert numbers(english_numerals(source)) == numbers(translated_numerals)
+
+
+@pytest.mark.skipif(not shutil.which("ffmpeg"), reason="requires FFmpeg loudness filters")
+def test_mastering_fits_loudness_target_without_spilling_into_silence():
+    ticks = np.arange(MIX_RATE * 5)
+    speech = (1400 * np.sin(ticks / MIX_RATE * 390 * 2 * np.pi)).astype(np.int16)
+    speech[::MIX_RATE] = 26000
+    bed = np.zeros((MIX_RATE * 6, 2), dtype=np.int16)
+    audio, measured = mix_track(bed, [(350, 5350, speech)], 6000, 2)
+    assert -17 <= measured <= -15
+    assert not audio[:round(.35 * MIX_RATE)].any()
+    assert not audio[round(5.35 * MIX_RATE):].any()
+    assert len(audio) == len(bed)
 
 
 def test_prose_recovered_when_translation_omits_protected_context():
@@ -68,7 +82,6 @@ def test_provider_budget_429_closes_only_the_exhausted_model(monkeypatch):
 
 
 def test_30_second_smoke_language_failure_and_resume(monkeypatch, tmp_path):
-    import shutil
     if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
         pytest.skip("FFmpeg and FFprobe are required for media smoke test")
 

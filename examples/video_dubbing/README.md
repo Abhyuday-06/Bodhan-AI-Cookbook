@@ -75,15 +75,17 @@ See the [architecture and decision notes](DESIGN.md) for the control flow, reque
 
 Use the English **Class 9 Mathematics, Chapter 6, Period 1** video from the supplied assignment brief. Save the official signed download as `inputs/class9-math.mp4` and request `hi,ta,bn`. Source files and generated media remain out of Git.
 
-The 329-second hosted run reached the end of the input and wrote three full-duration MP4s and SRT files. The result is partial because Indic-Speak exhausted its budget and some segments failed translation or speech verification. Unverified windows retain the source audio. FFprobe confirmed that every MP4 had the expected tagged audio and subtitle streams and matched the source duration.
+The full hosted run used the 329.27-second Class 9 source. It processed 38 source speech windows and reported `partial`. Windows without a verified dub retain the original audio. FFprobe checked the language-tagged audio and subtitle streams and the output durations.
 
-| Language | Verified dub windows | Median CER on those windows | Speech loudness |
-| --- | ---: | ---: | ---: |
-| Hindi | 14 of 38 | 0.1173 | −17.16 LUFS |
-| Tamil | 11 of 38 | 0.1087 | −17.45 LUFS |
-| Bengali | 13 of 38 | 0.1500 | −20.34 LUFS |
+| Language | Run status | Verified windows | Median CER | Speech LUFS | Duration difference |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Hindi | partial | 31 of 38 | 0.1333 | -15.95 | 0.0 ms |
+| Tamil | partial | 30 of 38 | 0.1118 | -15.96 | 0.0 ms |
+| Bengali | partial | 27 of 38 | 0.1385 | -16.04 | 0.0 ms |
 
-The cached continuation took 528.03 seconds and incurred ₹0.05326 in new Bodhan model usage. The reported loudness and coverage are short of the targets. Resume with the same output folder after restoring Indic-Speak capacity. The full-dub walkthrough is pending that run. See the [submission draft](PR_DESCRIPTION.md).
+The funded continuation took 1523.06 seconds and added ₹5.91912. The final pass took 265.12 seconds and added ₹0.00000 in Bodhan usage. Those figures reflect a populated cache and exclude Gemini charges. The public metrics report lists each category of skipped window. [Validation metrics](https://github.com/Abhyuday-06/Bodhan-AI-Cookbook/releases/download/video-dubbing-takehome-demo/video-dubbing-validation.json)
+
+The walkthrough replays the full-input run with shortened pauses, reports coverage and plays verified audio excerpts. [Demo walkthrough](https://github.com/Abhyuday-06/Bodhan-AI-Cookbook/releases/download/video-dubbing-takehome-demo/video-dubbing-demo.mp4)
 
 ## Verification
 

@@ -12,9 +12,17 @@ Follow the [recipe setup](README.md#setup) from a clean clone and run:
 python -m bodhan_dub --input inputs/class9-math.mp4 --langs hi,ta,bn --out outputs/demo
 ```
 
-## Architecture and workflow
+## Architecture
 
-See the [architecture diagram, decision flow and fallbacks](DESIGN.md). Speech detection and timing are deterministic. The LLM selects terms from the English transcript and proposes a shorter English paraphrase when the translation does not fit. The translated text always comes from Indic-Translate.
+FFmpeg and voice activity detection bound the recognition windows. The planner consumes the English text. The provider layer translates, synthesizes and verifies speech, then the muxer assembles accepted clips with the original picture and subtitles. [Architecture diagram](DESIGN.md#architecture)
+
+## Workflow
+
+The pipeline inventories the source, translates each speech window, fits and back-transcribes the dub, then packages verified clips and logs gaps. [Workflow and recovery](DESIGN.md#workflow)
+
+## Where the LLM is used, and why
+
+The LLM proposes protected names and shorter English phrasing for a tight timing slot. Glossary suggestions must occur in the source. A failed or invalid shortening keeps the existing wording, and an overlong clip is documented. Indic-Translate produces the target-language text. [Decisions and safeguards](DESIGN.md#decisions-and-safeguards)
 
 ## Bodhan models used
 
@@ -22,11 +30,19 @@ Hosted Indic-Transcribe for detection-window text and back-transcription, Indic-
 
 ## Results
 
-The [full-input validation results](README.md#demo-and-outputs) record Hindi, Tamil and Bengali coverage, CER and loudness. The measured output duration matched the 329-second source in all three languages. Remaining windows retain the source audio. The run was partial after the hosted Indic-Speak budget was exhausted.
+The full hosted run used the 329.27-second Class 9 source. It processed 38 source speech windows and reported `partial`. Windows without a verified dub retain the original audio. FFprobe checked the language-tagged audio and subtitle streams and the output durations.
+
+| Language | Run status | Verified windows | Median CER | Speech LUFS | Duration difference |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Hindi | partial | 31 of 38 | 0.1333 | -15.95 | 0.0 ms |
+| Tamil | partial | 30 of 38 | 0.1118 | -15.96 | 0.0 ms |
+| Bengali | partial | 27 of 38 | 0.1385 | -16.04 | 0.0 ms |
+
+The funded continuation took 1523.06 seconds and added ₹5.91912. The final pass took 265.12 seconds and added ₹0.00000 in Bodhan usage. Those figures reflect a populated cache and exclude Gemini charges. The public metrics report lists each category of skipped window. [Validation metrics](https://github.com/Abhyuday-06/Bodhan-AI-Cookbook/releases/download/video-dubbing-takehome-demo/video-dubbing-validation.json)
 
 ## Demo video
 
-The complete dubbing walkthrough is pending restored Indic-Speak capacity.
+The walkthrough replays the full-input run with shortened pauses, reports coverage and plays verified audio excerpts. [Demo walkthrough](https://github.com/Abhyuday-06/Bodhan-AI-Cookbook/releases/download/video-dubbing-takehome-demo/video-dubbing-demo.mp4)
 
 ## Trade-offs and known limitations
 
@@ -34,7 +50,7 @@ Speech-window timings approximate utterances since the hosted recognizer returns
 
 ## Cost and runtime
 
-The cached full-input continuation took 528.03 seconds and added ₹0.05326 in Bodhan usage, which is about ₹0.0097 per minute of source video. These figures exclude cached work and Gemini charges. The run report records exact spend estimates per language.
+The funded continuation took 1523.06 seconds and added ₹5.91912. The final pass took 265.12 seconds and added ₹0.00000 in Bodhan usage. The live dubbing pass used about ₹1.0786 per source minute. Per source minute by language, Hindi ₹0.2632, Tamil ₹0.4401, Bengali ₹0.3753. Shared source-analysis costs are recorded separately.
 
 ## AI assistance
 

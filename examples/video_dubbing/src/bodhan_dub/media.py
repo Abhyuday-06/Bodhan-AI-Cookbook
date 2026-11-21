@@ -231,8 +231,25 @@ def mix_track(original, placed, length_ms, channels):
     before = loudness(raw) if placed else None
     if before is not None:
         peak = float(np.max(np.abs(speech)))
-        gain = min(10 ** ((-16 - before) / 20), .83 / max(.00001, peak))
-        speech *= gain
+        desired_gain = 10 ** ((-16 - before) / 20)
+        safe_gain = min(desired_gain, .83 / max(.00001, peak))
+        speech *= safe_gain
+        if desired_gain > safe_gain:
+            try:
+                data = ffmpeg(
+                    "-f", "s16le", "-ar", MIX_RATE, "-ac", 1, "-i", "pipe:0",
+                    "-af", "loudnorm=I=-16:TP=-2:LRA=11:dual_mono=true:linear=false",
+                    "-ar", MIX_RATE, "-ac", 1, "-f", "s16le", "pipe:1", input_bytes=raw.tobytes(),
+                )
+                mastered = np.frombuffer(data, dtype="<i2")
+                if len(mastered) == len(raw):
+                    # Keep the intervals outside accepted windows silent, including filter tails.
+                    for start_ms, _, pcm in placed:
+                        start = sample_index(start_ms, MIX_RATE)
+                        end = start + len(pcm)
+                        speech[start:end] = mastered[start:end].astype(np.float32) / 32768
+            except DubError:
+                pass  # The static gain already fits the headroom.
     mix = bed + speech[:, None]
     peak = float(np.max(np.abs(mix))) if len(mix) else 0.
     final_gain = min(1., .96 / max(0.001, peak))
