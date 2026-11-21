@@ -173,7 +173,8 @@ def translate_segment(svc, source, language, script, terms, ctx):
     # Protect only the evidence that failed the first pass. The model sees the
     # surrounding sentence, so word order can still adapt to the target language.
     names = "|".join(re.escape(term) for term in sorted(selected, key=len, reverse=True))
-    wanted = re.compile((r"(?<!\w)(?:" + names + r")(?!\w)|" if names else "") + NUMBER.pattern, re.I)
+    quantity = NUMBER.pattern + r"(?:st\b|nd\b|rd\b|th\b)?"
+    wanted = re.compile((r"(?<!\w)(?:" + names + r")(?!\w)|" if names else "") + quantity, re.I)
     lookup = {term.casefold(): rendered for term, rendered in selected.items()}
     inserts = []
     nonce = sha256(source.encode()).hexdigest()[:8].upper()
@@ -194,11 +195,35 @@ def translate_segment(svc, source, language, script, terms, ctx):
         seen.append(number)
         return inserts[number]
 
-    result = PLACEHOLDER.sub(restore, result).strip()
-    if sorted(seen) != list(range(len(inserts))) or numbers(result) != numbers(source):
-        raise DubError("Indic-Translate changed names or numerals")
-    if not target_script(result, language):
-        raise DubError("Indic-Translate returned an unexpected script after recovery")
+    try:
+        restored = PLACEHOLDER.sub(restore, result).strip()
+    except DubError:
+        restored = ""
+    if (restored and sorted(seen) == list(range(len(inserts))) and numbers(restored) == numbers(source)
+            and target_script(restored, language)):
+        return restored
+
+    # Older translation routes can echo masking tokens while dropping the surrounding text.
+    # In that case, translate the prose spans and restore the verified original/curated values.
+    words, end = [], 0
+    for match in [*wanted.finditer(source), None]:
+        prose = source[end:match.start() if match else len(source)]
+        if any(char.isalpha() for char in prose):
+            translated = _plain_translation(
+                svc, prose.strip(), language, script, {}, {**ctx, "phase": "protected_span_fallback"},
+            )
+            if not translated or not target_script(translated, language):
+                raise DubError("Indic-Translate could not verify the prose around a protected span")
+            leading = prose[:len(prose) - len(prose.lstrip())]
+            trailing = prose[len(prose.rstrip()):]
+            prose = leading + translated.strip() + trailing
+        words.append(prose)
+        if match:
+            words.append(lookup.get(match[0].casefold(), match[0]))
+            end = match.end()
+    result = "".join(words).strip()
+    if numbers(result) != numbers(source) or not target_script(result, language):
+        raise DubError("Indic-Translate failed script or numeral verification after recovery")
     return result
 
 

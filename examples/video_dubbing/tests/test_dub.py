@@ -6,8 +6,8 @@ import numpy as np
 import pytest
 from bodhan_dub import __main__ as cli
 from bodhan_dub.media import MIX_RATE, ffmpeg, fit_speed, probe, speech_spans, wave_bytes
-from bodhan_dub.providers import KEY_NAMES
-from bodhan_dub.workflow import english_numerals, numbers, phonetic_quality
+from bodhan_dub.providers import KEY_NAMES, DubError, Providers
+from bodhan_dub.workflow import english_numerals, numbers, phonetic_quality, translate_segment
 
 
 def test_vad_keeps_a_pause_and_caps_long_windows():
@@ -34,6 +34,37 @@ def test_spoken_english_numbers_can_be_compared_with_indic_digits():
     source = "Period one, chapter six. An angle is ninety or one eighty degrees."
     translated_numerals = "१ ६ ९० १८०"
     assert numbers(english_numerals(source)) == numbers(translated_numerals)
+
+
+def test_prose_recovered_when_translation_omits_protected_context():
+    class MasksOnlyProvider:
+        def translate(self, text, language, script, context):
+            assert language == "hi"
+            if context.get("phase") == "protected_translation":
+                return text.split()[0]
+            return "अभ्यास"
+
+    assert translate_segment(MasksOnlyProvider(), "1st exercise", "hi", "native", {}, {}) == "1st अभ्यास"
+
+
+def test_provider_budget_429_closes_only_the_exhausted_model(monkeypatch):
+    monkeypatch.setenv(KEY_NAMES["speak"], "offline-test-only")
+    monkeypatch.setenv(KEY_NAMES["translate"], "offline-test-only")
+    calls = []
+
+    def route(request):
+        calls.append(request.url.path)
+        if request.url.path.endswith("/speech"):
+            return httpx.Response(429, json={"error": {"type": "budget_exceeded"}})
+        return httpx.Response(200, json={"translation": "परीक्षण"})
+
+    with Providers(1, None, transport=httpx.MockTransport(route)) as provider:
+        for _ in range(2):
+            with pytest.raises(DubError, match="credit exhausted") as exhausted:
+                provider.speak("परीक्षण", "hi", "Kavya", {}, 0)
+            assert exhausted.value.status == 402
+        assert provider.translate("test", "hi", "native", {}) == "परीक्षण"
+    assert calls.count("/v1/audio/speech") == 1
 
 
 def test_30_second_smoke_language_failure_and_resume(monkeypatch, tmp_path):

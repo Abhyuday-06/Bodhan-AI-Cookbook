@@ -45,7 +45,7 @@ ta: {voice: Anitha}
 bn: Ishita
 ```
 
-`--jobs` limits concurrent provider calls. `--max-cost-inr` sets an optional estimated Bodhan spend cap. Reuse the same output directory for a cached rerun, or use `--no-cache` to measure a cold run. Use `--allow-short-input` for smoke tests under one minute.
+`--jobs` limits concurrent provider calls. `--max-cost-inr` sets an optional estimated Bodhan spend cap. Set `BODHAN_REQUEST_INTERVAL_S` to space hosted requests per Bodhan model. A transient rate limit backs off and enables per-model spacing. Credit exhaustion pauses new requests to the affected model for the rest of the run, while cached results remain available. Reuse the same output directory for a cached rerun, or use `--no-cache` to measure a cold run. Use `--allow-short-input` for smoke tests under one minute.
 
 ```text
 outputs/demo/
@@ -73,7 +73,17 @@ See the [architecture and decision notes](DESIGN.md) for the control flow, reque
 
 ## Demo and outputs
 
-Use the English **Class 9 Mathematics, Chapter 6, Period 1** video from the supplied assignment brief. Save the official signed download as `inputs/class9-math.mp4` and request `hi,ta,bn`. Source files and generated media remain out of Git. Record the full run and playback in a walkthrough of at most five minutes. See [submission draft](PR_DESCRIPTION.md) for result and recording slots.
+Use the English **Class 9 Mathematics, Chapter 6, Period 1** video from the supplied assignment brief. Save the official signed download as `inputs/class9-math.mp4` and request `hi,ta,bn`. Source files and generated media remain out of Git.
+
+The 329-second hosted run reached the end of the input and wrote three full-duration MP4s and SRT files. The result is partial because Indic-Speak exhausted its budget and some segments failed translation or speech verification. Unverified windows retain the source audio. FFprobe confirmed that every MP4 had the expected tagged audio and subtitle streams and matched the source duration.
+
+| Language | Verified dub windows | Median CER on those windows | Speech loudness |
+| --- | ---: | ---: | ---: |
+| Hindi | 14 of 38 | 0.1173 | −17.16 LUFS |
+| Tamil | 11 of 38 | 0.1087 | −17.45 LUFS |
+| Bengali | 13 of 38 | 0.1500 | −20.34 LUFS |
+
+The cached continuation took 528.03 seconds and incurred ₹0.05326 in new Bodhan model usage. The reported loudness and coverage are short of the targets. Resume with the same output folder after restoring Indic-Speak capacity. The full-dub walkthrough is pending that run. See the [submission draft](PR_DESCRIPTION.md).
 
 ## Verification
 

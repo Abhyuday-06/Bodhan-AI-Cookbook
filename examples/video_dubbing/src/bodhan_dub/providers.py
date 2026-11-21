@@ -8,6 +8,7 @@ import random
 from collections import Counter
 from contextlib import nullcontext
 from hashlib import sha256
+from math import isfinite
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from threading import BoundedSemaphore, Lock
@@ -80,6 +81,13 @@ class Providers:
         self.translate_route = None
         self.translate_lock = Lock()
         self.cooldown = {}
+        try:
+            self.request_interval = float(os.getenv("BODHAN_REQUEST_INTERVAL_S", "0"))
+        except ValueError as exc:
+            raise DubError("BODHAN_REQUEST_INTERVAL_S must be a number") from exc
+        if not isfinite(self.request_interval) or self.request_interval < 0:
+            raise DubError("BODHAN_REQUEST_INTERVAL_S must be finite and nonnegative")
+        self.throttled = set()
         self.exhausted = set()
         self.speech_gate = BoundedSemaphore(min(2, jobs))
 
@@ -94,6 +102,19 @@ class Providers:
         with self.guard:
             self.events.append(row)
         log("provider", **row)
+
+    def wait_for_slot(self, stage):
+        if stage == "llm":
+            return
+        while True:
+            with self.guard:
+                now = monotonic()
+                wait = self.cooldown.get(stage, 0.) - now
+                if wait <= 0:
+                    interval = max(self.request_interval, 6.2 if stage in self.throttled else 0.)
+                    self.cooldown[stage] = now + interval
+                    return
+            sleep(wait)
 
     def request(self, stage, route, ctx, payload, *, audio=None, estimate=0., binary=False, nonce=0):
         url = (self.llm_url if stage == "llm" else HOST) + route
@@ -116,6 +137,7 @@ class Providers:
                         raise DubError("estimated Bodhan budget reached")
                     self.reserved += estimate
                 status, wait, cost, retry = None, 0., 0., True
+                credit_exhausted = False
                 issue, usage = "request timed out", {}
                 start = monotonic()
                 try:
@@ -123,10 +145,7 @@ class Providers:
                             if audio is not None else {"json": payload})
                     model_gate = self.speech_gate if stage == "speak" else nullcontext()
                     with model_gate, self.gate:
-                        with self.guard:
-                            cooldown = self.cooldown.get(stage, 0.) - monotonic()
-                        if cooldown > 0:
-                            sleep(cooldown)
+                        self.wait_for_slot(stage)
                         start = monotonic()
                         response = self.client.post(url, headers={"Authorization": f"Bearer {secret}"}, **args)
                     status = response.status_code
@@ -151,11 +170,13 @@ class Providers:
                     issue = f"{stage} HTTP {status}"
                     retry = status in {408, 425, 429, 500, 502, 503, 504}
                     # Inspect quota errors without copying the provider's message into logs.
-                    if status == 429:
-                        if any(word in response.text.lower() for word in (
-                            "insufficient credit", "insufficient balance", "credit balance", "prepayment", "out of credit"
+                    if stage != "llm" and status in {402, 429}:
+                        if status == 402 or any(word in response.text.lower() for word in (
+                            "budget_exceeded", "exceededbudget", "insufficient credit", "insufficient balance",
+                            "credit balance", "prepayment", "out of credit",
                         )):
                             issue += " (credit exhausted)"
+                            credit_exhausted = True
                             retry = False
                             with self.guard:
                                 self.exhausted.add(stage)
@@ -164,9 +185,10 @@ class Providers:
                         except ValueError:
                             pass
                         if retry:
-                            wait = max(wait, min(45., 8. * 2 ** (attempt - 1)))
+                            wait = max(wait, 45.)
                             with self.guard:
-                                self.cooldown[stage] = monotonic() + wait
+                                self.throttled.add(stage)
+                                self.cooldown[stage] = max(self.cooldown.get(stage, 0.), monotonic() + wait)
                 except httpx.TransportError:
                     issue = f"{stage} transport error"
                 except (TypeError, ValueError):
@@ -178,7 +200,7 @@ class Providers:
                 self.record(stage, ctx, outcome="error", attempt=attempt, http=status, issue=issue,
                             seconds=round(monotonic() - start, 3), cost_inr=0.)
                 if not retry or attempt == 4:
-                    raise DubError(issue, status)
+                    raise DubError(issue, 402 if credit_exhausted else status)
                 sleep(max(wait, .8 * 2 ** (attempt - 1) + random.random() * .25))
         raise AssertionError("unreachable")
 

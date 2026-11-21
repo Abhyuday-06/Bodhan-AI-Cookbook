@@ -22,11 +22,11 @@ Hosted Indic-Transcribe for detection-window text and back-transcription, Indic-
 
 ## Results
 
-Add the measured demo coverage, sync offset, duration, CER and loudness from the cold hosted run and link the permitted output samples.
+The [full-input validation results](README.md#demo-and-outputs) record Hindi, Tamil and Bengali coverage, CER and loudness. The measured output duration matched the 329-second source in all three languages. Remaining windows retain the source audio. The run was partial after the hosted Indic-Speak budget was exhausted.
 
 ## Demo video
 
-Add the walkthrough link after recording the full demo and playback.
+The complete dubbing walkthrough is pending restored Indic-Speak capacity.
 
 ## Trade-offs and known limitations
 
@@ -34,7 +34,7 @@ Speech-window timings approximate utterances since the hosted recognizer returns
 
 ## Cost and runtime
 
-Use measured per-language and per-input-minute costs from the demo report. The report separates cache hits from hosted calls.
+The cached full-input continuation took 528.03 seconds and added ₹0.05326 in Bodhan usage, which is about ₹0.0097 per minute of source video. These figures exclude cached work and Gemini charges. The run report records exact spend estimates per language.
 
 ## AI assistance
 
