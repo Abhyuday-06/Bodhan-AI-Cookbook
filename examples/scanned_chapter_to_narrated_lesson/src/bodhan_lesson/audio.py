@@ -211,10 +211,28 @@ def normal_wav(source, target):
        "-c:a", "pcm_s16le", target)
 
 
+def join_short_prose(items, limit=210):
+    """Keep complete adjacent prose together within one verified speech request."""
+    grouped = []
+    for item in items:
+        previous = grouped[-1] if grouped else None
+        if (previous and previous["policy"] == item["policy"] == "read_prose"
+                and previous["text"].endswith((".", "!", "?", "।", "॥", "؟"))
+                and len(previous["text"]) + len(item["text"]) + 1 <= limit):
+            grouped[-1] = {
+                "text": previous["text"] + " " + item["text"],
+                "source_blocks": previous["source_blocks"] + item["source_blocks"],
+                "policy": item["policy"],
+            }
+        else:
+            grouped.append(item)
+    return grouped
+
+
 def synth_section(svc, items, language, voice, style, section, file, wav_file):
     attempts, included, failed, raw_frames = [], [], [], []
     text_offset = 0.0
-    for item in items:
+    for item in join_short_prose(items):
         for number, text in enumerate(speech_chunks(item["text"]), 1):
             ctx = context("audio_verify", language=language, section=section,
                           blocks=item["source_blocks"], chunk=number)

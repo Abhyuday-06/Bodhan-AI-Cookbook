@@ -13,7 +13,7 @@ from PIL import Image
 import pytest
 
 from bodhan_lesson.__main__ import parse_args
-from bodhan_lesson.audio import cer, speech_chunks
+from bodhan_lesson.audio import cer, join_short_prose, speech_chunks
 from bodhan_lesson.chapter import assemble, merge_tables
 from bodhan_lesson.core import Block, KEYS, Page, Services, StageError
 from bodhan_lesson.pipeline import execute
@@ -24,6 +24,19 @@ from bodhan_lesson.translate import ESCAPE, signature, translate_markdown
 class NoJudge:
     def judge(self, *_):
         return None
+
+
+def test_short_prose_groups_keep_block_provenance_and_structural_boundaries():
+    items = [
+        {"text": "One sentence.", "source_blocks": ["b1"], "policy": "read_prose"},
+        {"text": "Another sentence.", "source_blocks": ["b2"], "policy": "read_prose"},
+        {"text": "New section", "source_blocks": ["b3"], "policy": "heading"},
+        {"text": "Third sentence.", "source_blocks": ["b4"], "policy": "read_prose"},
+    ]
+    groups = join_short_prose(items, limit=40)
+    assert groups[0]["text"] == "One sentence. Another sentence."
+    assert groups[0]["source_blocks"] == ["b1", "b2"]
+    assert groups[1:] == items[2:]
 
 
 def test_speech_budget_429_preserves_cached_audio_and_other_models(monkeypatch, tmp_path):
